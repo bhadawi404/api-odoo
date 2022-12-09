@@ -67,3 +67,42 @@ def page(request, controllerName):
     response_status = (status.HTTP_200_OK if content["status"] is True else status.HTTP_400_BAD_REQUEST)
 
     return Response(status=response_status, data=content)
+
+@api_view(['GET'])
+def detail(request, id, controllerName):
+    
+    modelDA = BaseDA()
+    modelResponse = ProductResponse()
+    BaseDA.TABLE_NAME = controller_translator(controllerName)
+    data = []
+    total_data = 0
+    error_message = []
+
+    try:
+        response = modelDA.getbyid(controllerName,id)
+        dataResponse = modelResponse.detail(response)
+        
+        if not dataResponse :
+            error_message = 'data tidak ada'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+                "status": False,
+                "total_data": 0
+            }
+            return Response(status=status.HTTP_200_OK, data=content)
+        data = dataResponse
+        # data = response
+        error_message = []
+    except Exception as ex:
+        error_message.append(str(ex))
+
+    content = {
+        "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+        "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+        "status": (True if len(error_message) == 0 else False)
+    }
+
+    response_status = (status.HTTP_200_OK if content["status"] is True else status.HTTP_400_BAD_REQUEST)
+
+    return Response(status=response_status, data=content)
