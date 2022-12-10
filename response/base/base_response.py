@@ -1,12 +1,11 @@
-class ProductResponse(object):
-    def detail(self, response):
+class BaseResponse(object):
+    def product(self, response):
         result = []
         for x in response:
             uom_id = x['uom_id']
             categ_id = x['categ_id']
             c =categ_id[1]
             u = uom_id[1]
-            print(u)
             result.append({
                 'productId': x['id'],
                 'productName': x['name'],
@@ -17,5 +16,17 @@ class ProductResponse(object):
                 'productCategory':c,
                 'productCost':x['standard_price'],
                 'productStatus':x['active'],   
+            })
+        return result
+    
+    def product_template(self, response):
+        result = []
+        for x in response:
+            uom_id = x['uom_id']
+            categ_id = x['categ_id']
+            c =categ_id[1]
+            u = uom_id[1]
+            result.append({
+                'productId': x['id'], 
             })
         return result

@@ -1,5 +1,5 @@
 from dataacess.da.base_da import BaseDA
-from response.product.product_response import ProductResponse
+from response.base.base_response import BaseResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -25,23 +25,36 @@ def controller_translator(controllerName):
     if controllerName not in [None, ""]:
         if str(controllerName).lower() == 'product':
             result = 'product.product'
+        elif str(controllerName).lower() == 'product':
+            result = 'product.template'
+        
+
+    return result
+
+def controller_response(controllerName):
+    result = ""
+
+    if str(controllerName).lower() == 'product.product':
+        result = 'modelResponse.product'
+    elif str(controllerName).lower() == 'product.template':
+        result = 'modelResponse.product_template'
         
 
     return result
 
 @api_view(['GET'])
 def page(request, controllerName):
-    
+    tes =[]
     modelDA = BaseDA()
-    modelResponse = ProductResponse()
+    modelResponse = BaseResponse()
     BaseDA.TABLE_NAME = controller_translator(controllerName)
+    responseDA = controller_response(controllerName)
     data = []
-    total_data = 0
     error_message = []
 
     try:
         response = modelDA.getall(controllerName)
-        dataResponse = modelResponse.detail(response)
+        dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
             error_message = 'data tidak ada'
@@ -59,12 +72,13 @@ def page(request, controllerName):
         error_message.append(str(ex))
 
     content = {
-        "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+        "statusCode": 200,
+        "statusCodeDesc": 'OK',
         "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-        "status": (True if len(error_message) == 0 else False)
+        
     }
 
-    response_status = (status.HTTP_200_OK if content["status"] is True else status.HTTP_400_BAD_REQUEST)
+    response_status = (status.HTTP_200_OK if content["statusCode"] == 200 else status.HTTP_400_BAD_REQUEST)
 
     return Response(status=response_status, data=content)
 
@@ -72,15 +86,16 @@ def page(request, controllerName):
 def detail(request, id, controllerName):
     
     modelDA = BaseDA()
-    modelResponse = ProductResponse()
+    modelResponse = BaseResponse()
     BaseDA.TABLE_NAME = controller_translator(controllerName)
+    responseDA = controller_response(controllerName)
     data = []
     total_data = 0
     error_message = []
 
     try:
         response = modelDA.getbyid(controllerName,id)
-        dataResponse = modelResponse.detail(response)
+        dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
             error_message = 'data tidak ada'
@@ -98,11 +113,12 @@ def detail(request, id, controllerName):
         error_message.append(str(ex))
 
     content = {
-        "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+        "statusCode": 200,
+        "statusCodeDesc": 'OK',
         "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-        "status": (True if len(error_message) == 0 else False)
+        
     }
 
-    response_status = (status.HTTP_200_OK if content["status"] is True else status.HTTP_400_BAD_REQUEST)
+    response_status = (status.HTTP_200_OK if content["statusCode"] == 200 else status.HTTP_400_BAD_REQUEST)
 
     return Response(status=response_status, data=content)
