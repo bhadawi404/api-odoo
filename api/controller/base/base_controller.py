@@ -17,7 +17,7 @@ import os
 
 
 class base_controller(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
 def controller_translator(controllerName):
     result = ""
@@ -25,11 +25,12 @@ def controller_translator(controllerName):
     if controllerName not in [None, ""]:
         if str(controllerName).lower() == 'product-product':
             result = 'product.product'
-        elif str(controllerName).lower() == 'purchase.order':
-            result = 'purchase.order'
+        elif str(controllerName).lower() == 'purchase-order':
+            result = 'stock.picking'
         elif str(controllerName).lower() == 'stock-take':
-            print('masuk sini')
             result = 'product.product'
+        elif str(controllerName).lower() == 'validate-purchase':
+            result = 'purchase.order'
         
 
     return result
@@ -39,11 +40,12 @@ def controller_response(controllerName):
 
     if str(controllerName).lower() == 'product-product':
         result = 'modelResponse.product'
-    elif str(controllerName).lower() == 'purchase.order':
-        result = 'modelResponse.purchase_order'
+    elif str(controllerName).lower() == 'purchase-order':
+        result = 'modelResponse.stock_picking'
     elif str(controllerName).lower() == 'stock-take':
-        print('masuk sini juga')
         result = 'modelResponse.stock_take'
+    elif str(controllerName).lower() == 'validate-purchase':
+        result = 'modelResponse.validate_purchase'
         
 
     return result
@@ -142,10 +144,53 @@ def scan(request, barcode, controllerName):
     total_data = 0
     error_message = []
     print(responseDA,"==== response scan =====")
-    print(controllerName,"==== controller name scan ====")
+    print(controller,"==== controller name scan ====")
 
     try:
         response = modelDA.getbyidscan(controller,barcode)
+        dataResponse = eval(responseDA)(response)
+        
+        if not dataResponse :
+            error_message = 'data tidak ada'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+                "status": False,
+                "total_data": 0
+            }
+            return Response(status=status.HTTP_200_OK, data=content)
+        data = dataResponse
+        # data = response
+        error_message = []
+    except Exception as ex:
+        error_message.append(str(ex))
+
+    content = {
+        "statusCode": 200,
+        "statusCodeDesc": 'OK',
+        "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+        
+    }
+
+    response_status = (status.HTTP_200_OK if content["statusCode"] == 200 else status.HTTP_400_BAD_REQUEST)
+
+    return Response(status=response_status, data=content)
+
+
+@api_view(['PUT'])
+def update(request, id, controllerName):
+    modelDA = BaseDA()
+    modelResponse = BaseResponse()
+    controller = controller_translator(controllerName)
+    responseDA = controller_response(controllerName)
+    data = []
+    total_data = 0
+    error_message = []
+    print(responseDA,"==== response scan =====")
+    print(controller,"==== controller name scan ====")
+
+    try:
+        response = modelDA.update(request,id)
         dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
