@@ -57,8 +57,6 @@ def page(request, controllerName):
     modelResponse = BaseResponse()
     controller = controller_translator(controllerName)
     responseDA = controller_response(controllerName)
-    print(responseDA,"==== response =====")
-    print(tes,"==== controller name ====")
     data = []
     error_message = []
 
@@ -143,8 +141,6 @@ def scan(request, barcode, controllerName):
     data = []
     total_data = 0
     error_message = []
-    print(responseDA,"==== response scan =====")
-    print(controller,"==== controller name scan ====")
 
     try:
         response = modelDA.getbyidscan(controller,barcode)
@@ -186,8 +182,6 @@ def update(request, id, controllerName):
     data = []
     total_data = 0
     error_message = []
-    print(responseDA,"==== response scan =====")
-    print(controller,"==== controller name scan ====")
 
     try:
         response = modelDA.update(request,id)
