@@ -2,7 +2,7 @@ import xmlrpc.client
 
 url = 'https://v4.amtiss.com'
 db = 'v4'
-username = 'admin' #username odoo
+username = 'admin'
 password = '4mti55'
 
 
