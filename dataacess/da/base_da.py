@@ -1,15 +1,15 @@
 import xmlrpc.client
 
-# url = 'http://localhost:8015'
-# db = 'v4'
-# username = 'admin' #username odoo
-# password = '4mti55'
-
-
-url = 'http://localhost:8015'
-db = 'demo-warehouse'
+url = 'https://v4.amtiss.com'
+db = 'v4'
 username = 'admin' #username odoo
-password = 'admin'
+password = '4mti55'
+
+
+# url = 'http://localhost:8015'
+# db = 'demo-warehouse'
+# username = 'admin' #username odoo
+# password = 'admin'
 
 
 
