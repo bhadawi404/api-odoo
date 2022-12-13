@@ -112,3 +112,127 @@ class BaseResponse(object):
 
             ############################
         return purchase
+        
+    def internal_transfer(self, response):
+        internal = []
+        # print(response)
+        for x in response:
+            id =x['id']
+            type_id = x['picking_type_id'][0]
+            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+            uid = common.authenticate(db, username, password, {})
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Internal Transfers']]], {'fields': ['name']})
+
+            if len(cek_inter) > 0 :
+                
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                linesIT=[]
+                for data in stock_move:
+                    product_ids = data['product_id'][0]
+                    product_name = data['product_id'][1]
+                    product_qty = data['product_qty']
+                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['qty_done']})
+                    qty_received = 0
+                    for rc in received:
+                        qty_received = rc['qty_done']
+                    linesIT.append(
+                        {
+                            "productId": product_ids,
+                            "productName": product_name,
+                            'productqty': product_qty,
+                            'productQtyReceived': qty_received,
+                        })
+                internal.append({
+                    'NoPickingType': x['name'],
+                    'SourceLocation': x['location_id'][1],
+                    'DestinationLocation':x['location_dest_id'][1],
+                    'ScheduleDate': x['scheduled_date'],
+                    # 'MRID': x['mr_id'],
+                    # 'AssetId': x['asset_id'],
+                    'InternalTransferLine': linesIT,
+                })
+        return internal
+
+    def consume(self, response):
+        consume = []
+        # print(response)
+        for x in response:
+            id =x['id']
+            type_id = x['picking_type_id'][0]
+            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+            uid = common.authenticate(db, username, password, {})
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            consume_cek = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Consume']]], {'fields': ['name']})
+
+            # if len(consume_cek) > 0 & x['state']=='approved':
+            if len(consume_cek) > 0:
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                linesConsume=[]
+                for data in stock_move:
+                    product_ids = data['product_id'][0]
+                    product_name = data['product_id'][1]
+                    product_qty = data['product_qty']
+                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['qty_done']})
+                    qty_received = 0
+                    for rc in received:
+                        qty_received = rc['qty_done']
+                    linesConsume.append(
+                        {
+                            "productId": product_ids,
+                            "productName": product_name,
+                            'productqty': product_qty,
+                            'productQtyReceived': qty_received,
+                        })
+                consume.append({
+                    'NoPickingType': x['name'],
+                    'SourceLocation': x['location_id'][1],
+                    'DestinationLocation':x['location_dest_id'][1],
+                    'ScheduleDate': x['scheduled_date'],
+                    # 'MRID': x['mr_id'],
+                    # 'AssetId': x['asset_id'],
+                    'ConsumeLine': linesConsume,
+                })
+        return consume
+    
+    def return_product(self, response):
+        return_product = []
+        # print(response)
+        for x in response:
+            id =x['id']
+            type_id = x['picking_type_id'][0]
+            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+            uid = common.authenticate(db, username, password, {})
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','in',['Internal Transfers','Consume']]]], {'fields': ['name']})
+            if len(cek_inter) > 0 :
+                common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+                uid = common.authenticate(db, username, password, {})
+                models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                linesReturn=[]
+                for data in stock_move:
+                    product_ids = data['product_id'][0]
+                    product_name = data['product_id'][1]
+                    product_qty = data['product_qty']
+                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['qty_done']})
+                    qty_received = 0
+                    for rc in received:
+                        qty_received = rc['qty_done']
+                    linesReturn.append(
+                        {
+                            "productId": product_ids,
+                            "productName": product_name,
+                            'productqty': product_qty,
+                            'productQtyReceived': qty_received,
+                        })
+                return_product.append({
+                    'NoPickingType': x['name'],
+                    'SourceLocation': x['location_id'][1],
+                    'DestinationLocation':x['location_dest_id'][1],
+                    'ScheduleDate': x['scheduled_date'],
+                    # 'MRID': x['mr_id'],
+                    # 'AssetId': x['asset_id'],
+                    'ReturnLine': linesReturn,
+                })
+        return return_product
