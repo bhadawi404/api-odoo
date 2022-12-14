@@ -7,9 +7,9 @@ password = '4mti55'
 
 
 # url = 'http://localhost:8015'
-# db = 'demo-warehouse'
+# db = 'v4'
 # username = 'admin' #username odoo
-# password = 'admin'
+# password = '4mti55'
 
 
 
@@ -20,19 +20,23 @@ class BaseDA(object):
         result = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
-        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-        fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
-        
-        fields_list = []
-        for x in fields:
-            fields_list.append(x)
-        
-        response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[]], {'fields': fields_list})
+        if uid:
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
+            
+            fields_list = []
+            for x in fields:
+                fields_list.append(x)
+            
+            response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[]], {'fields': fields_list})
 
-        if not response :
-            response = []
+            if not response :
+                response = []
 
-        result = response
+            result = response
+        else:
+            response = 'Access Denied'
+            result = response
         return result
     
     #get all
@@ -40,19 +44,23 @@ class BaseDA(object):
         result = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
-        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-        fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
-        
-        fields_list = []
-        for x in fields:
-            fields_list.append(x)
-        
-        response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['barcode','=',id]]], {'fields': fields_list})
+        if uid:
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
+            
+            fields_list = []
+            for x in fields:
+                fields_list.append(x)
+            
+            response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['barcode','=',id]]], {'fields': fields_list})
 
-        if not response :
-            response = []
+            if not response :
+                response = []
 
-        result = response
+            result = response
+        else:
+            response = 'Access Denied'
+            result = response
         return result
     
     
@@ -61,19 +69,23 @@ class BaseDA(object):
         result = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
-        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-        fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
-        
-        fields_list = []
-        for x in fields:
-            fields_list.append(x)
-        
-        response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['name','=',barcode],['state','=','assigned']]], {'fields': fields_list})
+        if uid:
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            fields = models.execute_kw(db, uid, password, controllerName, 'fields_get', [], {'attributes': ['name']})
+            
+            fields_list = []
+            for x in fields:
+                fields_list.append(x)
+            
+            response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['name','=',barcode]]], {'fields': fields_list})
 
-        if not response :
-            response = []
+            if not response :
+                response = []
 
-        result = response
+            result = response
+        else:
+            response = 'Access Denied'
+            result = response
         return result
     
     #get all

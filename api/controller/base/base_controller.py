@@ -47,7 +47,7 @@ def controller_response(controllerName):
     if str(controllerName).lower() == 'product-product':
         result = 'modelResponse.product'
     elif str(controllerName).lower() == 'purchase-order':
-        result = 'modelResponse.stock_picking'
+        result = 'modelResponse.purchase_order'
     elif str(controllerName).lower() == 'stock-take':
         result = 'modelResponse.stock_take'
     elif str(controllerName).lower() == 'validate-purchase':
@@ -73,10 +73,25 @@ def page(request, controllerName):
 
     try:
         response = modelDA.getall(controller)
+        if response == 'Access Denied':
+            error_message = 'Access Denied'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_403_FORBIDDEN, data=content)    
         dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
-            error_message = 'data tidak ada'
+            error_message = 'DATA NOT FOUND'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+                "status": False,
+                "total_data": 0
+            }
+            return Response(status=status.HTTP_200_OK, data=content)
+        if not dataResponse :
+            error_message = 'DATA NOT FOUND'
             content = {
                 "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
                 "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
@@ -114,10 +129,16 @@ def detail(request, barcode, controllerName):
 
     try:
         response = modelDA.getbybarcode(controller,barcode)
+        if response == 'Access Denied':
+            error_message = 'Access Denied'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_403_FORBIDDEN, data=content) 
         dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
-            error_message = 'data tidak ada'
+            error_message = 'DATA NOT FOUND'
             content = {
                 "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
                 "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
@@ -143,8 +164,8 @@ def detail(request, barcode, controllerName):
     return Response(status=response_status, data=content)
 
 @api_view(['GET'])
-def scan(request, barcode, controllerName):
-    
+def scan(request, controllerName):
+    barcode = request.data['barcode']
     modelDA = BaseDA()
     modelResponse = BaseResponse()
     controller = controller_translator(controllerName)
@@ -158,7 +179,7 @@ def scan(request, barcode, controllerName):
         dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
-            error_message = 'data tidak ada'
+            error_message = 'DATA NOT FOUND'
             content = {
                 "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
                 "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
@@ -199,7 +220,7 @@ def update(request, id, controllerName):
         dataResponse = eval(responseDA)(response)
         
         if not dataResponse :
-            error_message = 'data tidak ada'
+            error_message = 'DATA NOT FOUND'
             content = {
                 "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
                 "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
