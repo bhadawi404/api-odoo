@@ -214,10 +214,9 @@ def update(request, id, controllerName):
     data = []
     total_data = 0
     error_message = []
-
     try:
-        response = modelDA.update(request,id)
-        dataResponse = eval(responseDA)(response)
+        response = modelDA.update(controller,id)
+        dataResponse = eval(responseDA)(response, request)
         
         if not dataResponse :
             error_message = 'DATA NOT FOUND'

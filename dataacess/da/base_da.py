@@ -89,7 +89,7 @@ class BaseDA(object):
         return result
     
     #get all
-    def update(self,request, controllerName,id):
+    def update(self,controllerName,id):
         result = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
@@ -100,7 +100,7 @@ class BaseDA(object):
         for x in fields:
             fields_list.append(x)
         
-        response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['id','=',id],['state','=','assigned']]], {'fields': fields_list})
+        response =models.execute_kw(db, uid, password, controllerName, 'search_read', [[['id','=',id]]], {'fields': fields_list})
 
         if not response :
             response = []

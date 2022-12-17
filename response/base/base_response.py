@@ -1,4 +1,5 @@
 import xmlrpc.client
+from datetime import datetime
 
 url = 'https://v4.amtiss.com'
 db = 'v4'
@@ -235,3 +236,42 @@ class BaseResponse(object):
                     'ReturnLine': linesReturn,
                 })
         return return_product
+    
+    
+    
+    def validate_purchase(self, response, request):
+        validate = []
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        request_received = request.data['qty_done'] 
+        date_now = datetime.now()
+        
+        now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        for x in response:
+            purchaseId = x['id']
+            purchaseName = x['name']
+            models.execute_kw(db, uid, password, 'purchase.order', 'write', [[purchaseId], {'state': "to_invoice"}])
+            stock_picking_obj  = models.execute_kw(db, uid, password, 'stock.picking', 'search_read', [[['origin','=',purchaseName],['state','=','assigned']]], {'fields': ['id','show_validate']})
+            for x in stock_picking_obj:
+                picking_ids = x['id']
+                models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
+
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['product_id','product_qty','id','product_uom_qty','qty_done','state']})
+                for move in stock_move:
+                    move_ids = move['id']
+                    move_product_id = move['product_id'][0]
+                    move_product_uom_qty = request_received - move['product_uom_qty']
+                    
+                    if request_received >= move_product_uom_qty:
+                        uom_qty = request_received - move['product_uom_qty']
+                        vals = {
+                            "product_uom_qty": uom_qty,
+                            "qty_done": request_received,
+                            "state": 'done'
+                        }
+                        models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
+                        
+            return True
+                
+                
