@@ -11,6 +11,10 @@ password = '4mti55'
 # username = 'admin' #username odoo
 # password = '4mti55'
 
+# url = 'http://localhost:8015'
+# db = 'v4_121222'
+# username = 'admin' #username odoo
+# password = '4mti55'
 
 
 class BaseDA(object):

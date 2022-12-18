@@ -6,8 +6,13 @@ db = 'v4'
 username = 'admin' 
 password = '4mti55'
 
-# url = 'http://localhost:8015'
+#url = 'http://localhost:8015'
 # db = 'v4'
+# username = 'admin' #username odoo
+# password = '4mti55'
+
+# url = 'http://localhost:8015'
+# db = 'v4_121222'
 # username = 'admin' #username odoo
 # password = '4mti55'
 
@@ -113,7 +118,7 @@ class BaseResponse(object):
             ############################
         return purchase
         
-    def internal_transfer(self, response):
+    def internal_transfer_in(self, response):
         internal = []
         # print(response)
         for x in response:
@@ -123,9 +128,47 @@ class BaseResponse(object):
             uid = common.authenticate(db, username, password, {})
             models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
             cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Internal Transfers']]], {'fields': ['name']})
-
-            if len(cek_inter) > 0 :
-                
+           
+            if cek_inter and x['state']=='assigned':
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                linesIT=[]
+                for data in stock_move:
+                    product_ids = data['product_id'][0]
+                    product_name = data['product_id'][1]
+                    product_qty = data['product_qty']
+                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['qty_done']})
+                    qty_received = 0
+                    for rc in received:
+                        qty_received = rc['qty_done']
+                    linesIT.append(
+                        {
+                            "productId": product_ids,
+                            "productName": product_name,
+                            'productqty': product_qty,
+                            'productQtyReceived': qty_received,
+                        })
+                internal.append({
+                    'NoPickingType': x['name'],
+                    'SourceLocation': x['location_id'][1],
+                    'DestinationLocation':x['location_dest_id'][1],
+                    'ScheduleDate': x['scheduled_date'],
+                    # 'MRID': x['mr_id'],
+                    # 'AssetId': x['asset_id'],
+                    'InternalTransferLine': linesIT,
+                })
+        return internal
+    
+    def internal_transfer_out(self, response):
+        internal = []
+        # print(response)
+        for x in response:
+            id =x['id']
+            type_id = x['picking_type_id'][0]
+            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+            uid = common.authenticate(db, username, password, {})
+            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Internal Transfers']]], {'fields': ['name']})
+            if cek_inter and x['state']=='draft':
                 stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
                 linesIT=[]
                 for data in stock_move:
