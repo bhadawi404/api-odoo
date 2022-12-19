@@ -33,7 +33,11 @@ def controller_translator(controllerName):
             result = 'purchase.order'
         elif str(controllerName).lower() == 'internal-transfer-in':
             result = 'stock.picking'
+        elif str(controllerName).lower() == 'validate-internal-transfer-in':
+            result = 'stock.picking'
         elif str(controllerName).lower() == 'internal-transfer-out':
+            result = 'stock.picking'
+        elif str(controllerName).lower() == 'validate-internal-transfer-out':
             result = 'stock.picking'
         elif str(controllerName).lower() == 'consume':
             result = 'stock.picking'
@@ -56,12 +60,17 @@ def controller_response(controllerName):
         result = 'modelResponse.validate_purchase'
     elif str(controllerName).lower() == 'internal-transfer-in':
         result = 'modelResponse.internal_transfer_in'
+    elif str(controllerName).lower() == 'validate-internal-transfer-in':
+        result = 'modelResponse.validate_internal_transfer_in'
     elif str(controllerName).lower() == 'internal-transfer-out':
         result = 'modelResponse.internal_transfer_out'
+    elif str(controllerName).lower() == 'validate-internal-transfer-out':
+        result = 'modelResponse.validate_internal_transfer_out'
     elif str(controllerName).lower() == 'consume':
         result = 'modelResponse.consume'
     elif str(controllerName).lower() == 'return':
         result = 'modelResponse.return_product'
+    
 
     return result
 

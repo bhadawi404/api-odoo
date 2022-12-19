@@ -6,7 +6,7 @@ db = 'v4'
 username = 'admin' 
 password = '4mti55'
 
-#url = 'http://localhost:8015'
+# url = 'http://localhost:8015'
 # db = 'v4'
 # username = 'admin' #username odoo
 # password = '4mti55'
@@ -279,9 +279,7 @@ class BaseResponse(object):
                     'ReturnLine': linesReturn,
                 })
         return return_product
-    
-    
-    
+
     def validate_purchase(self, response, request):
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
@@ -316,5 +314,68 @@ class BaseResponse(object):
                         models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
                         
             return True
-                
+
+    def validate_internal_transfer_out(self, response, request):
+        validate = []
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        date_now = datetime.now()
+        now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        for x in response:
+            pickingid = x['id']
+            cek_stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['picking_id']})
+            if len(cek_stock_move) < 1 :
+                if x['package_level_ids']:
+                    stock_package_level  = models.execute_kw(db, uid, password, 'stock.package_level', 'search_read', [[['id','=',x['package_level_ids']]]], {'fields': ['package_id','company_id','id']})
+                    for spl in stock_package_level:
+                        stock_quants_packages  = models.execute_kw(db, uid, password, 'stock.quant.package', 'search_read', [[['package_id','=',spl['package_id']]]], {'fields': ['quant_ids','location_id','location_dest_id']})
+                        for sq in stock_quants_packages:
+                            quants_ids_all  = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['id','=',sq['quant_ids']]]], {'fields': ['id','product_id','quantity']})
+                            for qi in quants_ids_all:
+                                models.execute_kw(db, uid, password, 'stock.move', 'create', [
+                                    {
+                                    'picking_id': pickingid,
+                                    "name":qi['product_id'][1],
+                                    "product_uom_qty":qi["quantity"],
+                                    "product_uom" : sq["location_id"][0],
+                                    "location_id" : sq["location_id"][0],
+                                    "location_dest_id" : sq["location_dest_id"][0],
+                                    "package_level_id" : spl['id'],
+                                    "package_level_id" : spl['company_id'][0],
+                                    }
+                                    ])
+               
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',pickingid], {'state': "assigned","reservation_date":date_now}])
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [['id','=',pickingid], {'state': "assigned"}])
+           
+            return True
+    
+    def validate_internal_transfer_in(self, response, request):
+        validate = []
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        request_received = request.data['qty_done'] 
+        date_now = datetime.now()
+        now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        for x in response:
+            picking_ids = x['id']
+            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
+            stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['product_id','product_qty','id','product_uom_qty','qty_done','state']})
+            for move in stock_move:
+                move_ids = move['id']
+                move_product_id = move['product_id'][0]
+                move_product_uom_qty = request_received - move['product_uom_qty']
+                    
+                if request_received >= move_product_uom_qty:
+                    uom_qty = request_received - move['product_uom_qty']
+                    vals = {
+                        "product_uom_qty": uom_qty,
+                        "qty_done": request_received,
+                        "state": 'done'
+                    }
+                    models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
+                        
+            return True           
                 
