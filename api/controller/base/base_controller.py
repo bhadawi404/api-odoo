@@ -30,7 +30,7 @@ def controller_translator(controllerName):
         elif str(controllerName).lower() == 'stock-take':
             result = 'product.product'
         elif str(controllerName).lower() == 'validate-purchase':
-            result = 'purchase.order'
+            result = 'stock.picking'
         elif str(controllerName).lower() == 'internal-transfer-in':
             result = 'stock.picking'
         elif str(controllerName).lower() == 'validate-internal-transfer-in':
@@ -249,6 +249,47 @@ def update(request, id, controllerName):
     content = {
         "statusCode": 200,
         "statusCodeDesc": 'OK',
+        "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+        
+    }
+
+    response_status = (status.HTTP_200_OK if content["statusCode"] == 200 else status.HTTP_400_BAD_REQUEST)
+
+    return Response(status=response_status, data=content)
+
+
+@api_view(['PUT'])
+def validate(request, controllerName):
+    # barcode = request.data['barcode']
+    modelDA = BaseDA()
+    modelResponse = BaseResponse()
+    controller = controller_translator(controllerName)
+    responseDA = controller_response(controllerName)
+    data = []
+    total_data = 0
+    error_message = []
+    try:
+        # response = modelDA.update(controller,request)
+        dataResponse = eval(responseDA)(request)
+        
+        if not dataResponse :
+            error_message = 'DATA NOT FOUND'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
+                "status": False,
+                "total_data": 0
+            }
+            return Response(status=status.HTTP_200_OK, data=content)
+        data = dataResponse
+        # data = response
+        error_message = []
+    except Exception as ex:
+        error_message.append(str(ex))
+
+    content = {
+        "statusCode": 200,
+        "statusCodeDesc": 'DATA BERHASIL DI VALIDATE',
         "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
         
     }
