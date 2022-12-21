@@ -355,6 +355,7 @@ class BaseResponse(object):
             location_id = x['location_id']
             location_dest_id = x['location_dest_id']
             company_id = x['company_id']
+            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
             for pd in product:
                 idprod = pd['productId']
                 request_received = pd['qty_done']
@@ -372,7 +373,7 @@ class BaseResponse(object):
                             "state": 'done'
                         }
                         models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
-                        
+
                         models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',picking_ids], {'state': "done"}])
            
                         models.execute_kw(db, uid, password, 'product.quant', 'create', [
