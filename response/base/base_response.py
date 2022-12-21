@@ -372,6 +372,9 @@ class BaseResponse(object):
                             "state": 'done'
                         }
                         models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
+                        
+                        models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',picking_ids], {'state': "done"}])
+           
                         models.execute_kw(db, uid, password, 'product.quant', 'create', [
                                     {
                                     'product_id': idprod,
