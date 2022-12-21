@@ -364,36 +364,35 @@ class BaseResponse(object):
                     move_ids = move['id']
                     move_product_id = move['product_id'][0]
                     move_product_uom_qty = request_received - move['product_uom_qty']
-                        
-                    if request_received >= move_product_uom_qty:
-                        uom_qty = request_received - move['product_uom_qty']
-                        vals = {
-                            "product_uom_qty": uom_qty,
-                            "qty_done": request_received,
-                            "state": 'done'
-                        }
-                        models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
+                    
+                    uom_qty = request_received - move['product_uom_qty']
+                    vals = {
+                        "product_uom_qty": uom_qty,
+                        "qty_done": request_received,
+                        "state": 'done'
+                    }
+                    models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
 
-                        models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',picking_ids], {'state': "done"}])
+                    models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',picking_ids], {'state': "done"}])
            
-                        models.execute_kw(db, uid, password, 'product.quant', 'create', [
-                                    {
-                                    'product_id': idprod,
-                                    'company_id' : company_id,
-                                    'location_id' : location_dest_id,
-                                    'in_date'    : now,
-                                    'quantity'   : request_received,
-                                    }
-                                    ])
-                        models.execute_kw(db, uid, password, 'product.quant', 'create', [
-                                    {
-                                    'product_id': idprod,
-                                    'company_id' : company_id,
-                                    'location_id' : location_id,
-                                    'in_date'    : now,
-                                    'quantity'   : request_received-(request_received*2),
-                                    }
-                                    ])
+                    models.execute_kw(db, uid, password, 'product.quant', 'create', [
+                                {
+                                'product_id': idprod,
+                                'company_id' : company_id,
+                                'location_id' : location_dest_id,
+                                'in_date'    : now,
+                                'quantity'   : request_received,
+                                }
+                                ])
+                    models.execute_kw(db, uid, password, 'product.quant', 'create', [
+                                {
+                                'product_id': idprod,
+                                'company_id' : company_id,
+                                'location_id' : location_id,
+                                'in_date'    : now,
+                                'quantity'   : request_received-(request_received*2),
+                                }
+                                ])
                         
             return True           
     
