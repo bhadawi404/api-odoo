@@ -70,6 +70,8 @@ def controller_response(controllerName):
         result = 'modelResponse.consume'
     elif str(controllerName).lower() == 'return':
         result = 'modelResponse.return_product'
+    elif str(controllerName).lower() == 'validate-return':
+            result = 'stock.picking'
     
 
     return result
