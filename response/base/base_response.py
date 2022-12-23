@@ -300,35 +300,37 @@ class BaseResponse(object):
         date_now = datetime.now()
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         
+        product = request.data['product']
         picking_ids = request.data['pickingId']
-        move_line_ids = request.data['moveLineId']
-        qty_done = request.data['productQtyDone']
-        move_ids = request.data['moveId']
-        order_line_ids = request.data['orderLineId']
-        order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',order_line_ids]]], {'fields': ['qty_received']})
         
-        qty_received = order_line[0]['qty_received']
+        for pd in product:
+            order_line_ids = pd['orderLineId']
+            order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',order_line_ids]]], {'fields': ['qty_received']})
+            move_line_ids = pd['moveLineId']
+            qty_done = pd['productQtyDone']
+            move_ids = pd['moveId']
+            
+            qty_received = order_line[0]['qty_received']
+            
+            vals_order_line = {
+                "qty_received":  qty_done + qty_received
+            } 
+            models.execute_kw(db, uid, password, 'purchase.order.line', 'write', [[order_line_ids], vals_order_line])
+            
+            vals_stock_move_line = {
+                "product_uom_qty":0,
+                "qty_done": qty_done,
+                "state": 'done'
+            }
+            #update Product uom qty 0, qty_done(request), state done
+            models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_line_ids], vals_stock_move_line])
+            
+            #update stock move state done
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
         
-        vals_order_line = {
-            "qty_received":  qty_done + qty_received
-        } 
-        
-        models.execute_kw(db, uid, password, 'purchase.order.line', 'write', [[order_line_ids], vals_order_line])
-        
-        vals_stock_move_line = {
-            "product_uom_qty":0,
-            "qty_done": qty_done,
-            "state": 'done'
-        }
 
         #update State & date done di stock Picking
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
-        
-        #update Product uom qty 0, qty_done(request), state done
-        models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_line_ids], vals_stock_move_line])
-        
-        #update stock move state done
-        models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
         
         return True
 
