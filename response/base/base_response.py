@@ -306,12 +306,11 @@ class BaseResponse(object):
         #update stock move state done
         models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
         
-        
-        
         return True
 
     def validate_internal_transfer_out(self, response, request):
         validate = []
+        
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
@@ -319,13 +318,35 @@ class BaseResponse(object):
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         for x in response:
             pickingid = x['id']
-            stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['id']})
+            
+            stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['id','company_id','product_id','product_uom','product_qty','product_uom_qty','location_dest_id','reference']})
             for sm in stock_move:
-                print("m")
+                
                 ids_stock_move = sm['id']
-                print(ids_stock_move)
+                cek_stock_move_line = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',ids_stock_move]]], {'fields': ['id']})
+                if not cek_stock_move_line:
+                    print("sini")
+                    models.execute_kw(db, uid, password, 'stock.move.line', 'create', [
+                        {
+                            "picking_id" : pickingid,
+                            "move_id":ids_stock_move,
+                            "company_id": sm['company_id'],
+                            "product_id": sm['product_id'],
+                            "product_uom_id": sm['product_uom_id'],
+                            "product_qty": sm['product_qty'],
+                            "product_uom_qty": sm['product_uom_qty'],
+                            "qty_done": 0,
+                            "date": now,
+                            "location_id": sm['location_id'],
+                            "product_uom_qty": sm['product_uom'],
+                            "location_dest_id": sm['location_dest_id'],
+                            "reference": sm['reference'],
+                            'state': "assigned",
+                            "reservation_date":date_now
+                        }
+                    ])
+                    print("dc")
                 models.execute_kw(db, uid, password, 'stock.move', 'write', [[ids_stock_move], {'state': "assigned","reservation_date":date_now}])
-                print("2")
             models.execute_kw(db, uid, password, 'stock.picking', 'write', [[pickingid], {'state': "assigned"}])
             
             return True
@@ -354,7 +375,6 @@ class BaseResponse(object):
                     
                     # uom_qty = qty_done - move['product_uom_qty']
                     vals = {
-                        "product_uom_qty": 0,
                         "qty_done": qty_done,
                         "state": 'done'
                     }
