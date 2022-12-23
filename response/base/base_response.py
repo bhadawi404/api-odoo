@@ -128,6 +128,7 @@ class BaseResponse(object):
                         qty_received = rc['qty_done']
                     linesIT.append(
                         {
+                            "stockMoveId": data['id'],
                             "productId": product_ids,
                             "productName": product_name,
                             'productqty': product_qty,
@@ -167,6 +168,7 @@ class BaseResponse(object):
                         qty_received = rc['qty_done']
                     linesIT.append(
                         {
+                            "stockMoveId": data['id'],
                             "productId": product_ids,
                             "productName": product_name,
                             'productqty': product_qty,
@@ -208,6 +210,7 @@ class BaseResponse(object):
                         qty_received = rc['qty_done']
                     linesConsume.append(
                         {
+                            "stockMoveId": data['id'],
                             "productId": product_ids,
                             "productName": product_name,
                             'productqty': product_qty,
@@ -285,6 +288,7 @@ class BaseResponse(object):
         vals_order_line = {
             "qty_received":  qty_done + qty_received
         } 
+        
         models.execute_kw(db, uid, password, 'purchase.order.line', 'write', [[order_line_ids], vals_order_line])
         
         vals_stock_move_line = {
@@ -315,31 +319,15 @@ class BaseResponse(object):
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         for x in response:
             pickingid = x['id']
-            cek_stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['picking_id']})
-            if len(cek_stock_move) < 1 :
-                if x['package_level_ids']:
-                    stock_package_level  = models.execute_kw(db, uid, password, 'stock.package_level', 'search_read', [[['id','=',x['package_level_ids']]]], {'fields': ['package_id','company_id','id']})
-                    for spl in stock_package_level:
-                        stock_quants_packages  = models.execute_kw(db, uid, password, 'stock.quant.package', 'search_read', [[['package_id','=',spl['package_id']]]], {'fields': ['quant_ids','location_id','location_dest_id']})
-                        for sq in stock_quants_packages:
-                            quants_ids_all  = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['id','=',sq['quant_ids']]]], {'fields': ['id','product_id','quantity']})
-                            for qi in quants_ids_all:
-                                models.execute_kw(db, uid, password, 'stock.move', 'create', [
-                                    {
-                                    'picking_id': pickingid,
-                                    "name":qi['product_id'][1],
-                                    "product_uom_qty":qi["quantity"],
-                                    "product_uom" : sq["location_id"][0],
-                                    "location_id" : sq["location_id"][0],
-                                    "location_dest_id" : sq["location_dest_id"][0],
-                                    "package_level_id" : spl['id'],
-                                    "package_level_id" : spl['company_id'][0],
-                                    }
-                                    ])
-               
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',pickingid], {'state': "assigned","reservation_date":date_now}])
-            models.execute_kw(db, uid, password, 'stock.picking', 'write', [['id','=',pickingid], {'state': "assigned"}])
-           
+            stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['id']})
+            for sm in stock_move:
+                print("m")
+                ids_stock_move = sm['id']
+                print(ids_stock_move)
+                models.execute_kw(db, uid, password, 'stock.move', 'write', [[ids_stock_move], {'state': "assigned","reservation_date":date_now}])
+                print("2")
+            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[pickingid], {'state': "assigned"}])
+            
             return True
     
     def validate_internal_transfer_in(self, response, request):
@@ -355,25 +343,24 @@ class BaseResponse(object):
             location_id = x['location_id']
             location_dest_id = x['location_dest_id']
             company_id = x['company_id']
-            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
+            
             for pd in product:
                 idprod = pd['productId']
-                request_received = pd['qty_done']
-                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids],['product_id','=',idprod]]], {'fields': ['product_qty','id','product_uom_qty','qty_done','state']})
+                qty_done = pd['qty_done']
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids],['product_id','=',idprod]]], {'fields': ['product_qty','id','product_uom_qty','qty_done','state','move_id']})
                 for move in stock_move:
                     move_ids = move['id']
-                    move_product_id = move['product_id'][0]
-                    move_product_uom_qty = request_received - move['product_uom_qty']
+                    move = move['move_id']
                     
-                    uom_qty = request_received - move['product_uom_qty']
+                    # uom_qty = qty_done - move['product_uom_qty']
                     vals = {
-                        "product_uom_qty": uom_qty,
-                        "qty_done": request_received,
+                        "product_uom_qty": 0,
+                        "qty_done": qty_done,
                         "state": 'done'
                     }
                     models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
 
-                    models.execute_kw(db, uid, password, 'stock.move', 'write', [['picking_id','=',picking_ids], {'state': "done"}])
+                    models.execute_kw(db, uid, password, 'stock.move', 'write', [[move], {'state': "done"}])
            
                     models.execute_kw(db, uid, password, 'product.quant', 'create', [
                                 {
@@ -381,7 +368,7 @@ class BaseResponse(object):
                                 'company_id' : company_id,
                                 'location_id' : location_dest_id,
                                 'in_date'    : now,
-                                'quantity'   : request_received,
+                                'quantity'   : qty_done,
                                 }
                                 ])
                     models.execute_kw(db, uid, password, 'product.quant', 'create', [
@@ -390,9 +377,10 @@ class BaseResponse(object):
                                 'company_id' : company_id,
                                 'location_id' : location_id,
                                 'in_date'    : now,
-                                'quantity'   : request_received-(request_received*2),
+                                'quantity'   : qty_done-(qty_done*2),
                                 }
                                 ])
+            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
                         
             return True           
     
@@ -401,7 +389,7 @@ class BaseResponse(object):
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-        request_received = request.data['qty_done'] 
+        qty_done = request.data['qty_done'] 
         date_now = datetime.now()
         
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
@@ -430,13 +418,13 @@ class BaseResponse(object):
                 # stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['product_id','product_qty','id','product_uom_qty','qty_done','state']})
                 for pd in product:
                     idprod = pd['productId']
-                    request_received = pd['qty_done']
+                    qty_done = pd['qty_done']
                     vals = {
                             "name"      : "sss",
                             "picking_id" : create_stock_picking['id'],
                             "product_id" : idprod,
-                            "product_uom_qty": request_received,
-                            "product_qty": request_received,
+                            "product_uom_qty": qty_done,
+                            "product_qty": qty_done,
                             "company_id": x["company_id"][0],
                             "date" :now,
                             "location_id": x["location_id"][0],
@@ -450,7 +438,7 @@ class BaseResponse(object):
                             "product_id" : idprod,
                             "product_uom_qty": 0,
                             "product_qty": 0,
-                            "qty_done": request_received,
+                            "qty_done": qty_done,
                             "company_id": x["company_id"][0],
                             "date" :now,
                             "location_id": x["location_id"][0],
@@ -463,7 +451,7 @@ class BaseResponse(object):
                                     'company_id' : x["company_id"][0],
                                     "location_id": x["location_id"][0],
                                     'in_date'    : now,
-                                    'quantity'   : request_received,
+                                    'quantity'   : qty_done,
                                     }
                                     ])
                         
