@@ -1,15 +1,15 @@
 import xmlrpc.client
 from datetime import datetime
 
-url = 'https://v4.amtiss.com'
-db = 'v4'
-username = 'admin' 
-password = '4mti55'
-
-# url = 'http://localhost:8015'
+# url = 'https://v4.amtiss.com'
 # db = 'v4'
 # username = 'admin' 
 # password = '4mti55'
+
+url = 'http://localhost:8015'
+db = 'demo-warehouse'
+username = 'admin' 
+password = 'admin'
 
 # url = 'http://localhost:8015'
 # db = 'v4_121222'
@@ -101,6 +101,9 @@ class BaseResponse(object):
                         'purchaseOrderDateOrder': date_order,
                         'purchaseOrderReceiptDate': date_plan,
                         'purchaseOrderLine': move_line_list,
+                        'purchaseOrderLocationSourceId': x['location_id'][0],
+                        'purchaseOrderLocationDestinationId': x['location_dest_id'][0],
+                        'purchaseOrderCompanyId': x['company_id'][0]
                     })
         return purchase
         
@@ -302,8 +305,11 @@ class BaseResponse(object):
         
         product = request.data['product']
         picking_ids = request.data['pickingId']
-        
+        location_ids = request.data['purchaseOrderLocationSourceId']
+        destination_ids = request.data['purchaseOrderLocationDestinationId']
+        company_ids = request.data['purchaseOrderCompanyId']
         for pd in product:
+            product_id = pd['productId']
             order_line_ids = pd['orderLineId']
             order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',order_line_ids]]], {'fields': ['qty_received']})
             move_line_ids = pd['moveLineId']
@@ -327,7 +333,39 @@ class BaseResponse(object):
             
             #update stock move state done
             models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
-        
+
+            cek_product = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id]]], {'fields': ['id']})
+            
+            if cek_product:
+                cek_product_location = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+                cek_product_vendor = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['location_id','=',location_ids]]], {'fields': ['id','quantity']})
+                stock_quant_vendor_ids = cek_product_vendor[0]['id']
+                quantity_stock_vendor = cek_product_vendor[0]['quantity'] - qty_done
+                stock_quant_ids = cek_product_location[0]['id']
+                quantity_stock = cek_product_location[0]['quantity'] + qty_done
+                if cek_product_location:
+                    models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
+                if cek_product_vendor:
+                    models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_vendor_ids], {'quantity': quantity_stock_vendor}])
+            elif not cek_product:
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                    {
+                                    'product_id': product_id,
+                                    'company_id' : company_ids,
+                                    'location_id' : destination_ids,
+                                    'in_date'    : now,
+                                    'quantity'   : qty_done,
+                                    }
+                                    ])
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                            {
+                            'product_id': product_id,
+                            'location_id' : location_ids,
+                            'in_date'    : now,
+                            'quantity'   : qty_done-(qty_done*2),
+                            }
+                            ])
+            
 
         #update State & date done di stock Picking
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
