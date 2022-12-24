@@ -100,7 +100,7 @@ DATABASES = {
         'NAME': 'warehouse',
         'USER': 'indosoftware',
         'PASSWORD': '080595',
-        'HOST': 'localhost',
+        'HOST': '127.0.0.1',
         'PORT': '5432',
     }
 }
