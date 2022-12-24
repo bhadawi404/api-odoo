@@ -96,11 +96,11 @@ WSGI_APPLICATION = 'warehouse.wsgi.application'
 # }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'warehouse',
         'USER': 'indosoftware',
         'PASSWORD': '080595',
-        'HOST': '127.0.0.1',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
