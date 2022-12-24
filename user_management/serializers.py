@@ -13,10 +13,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         url = attrs.get('url')
         username = attrs.get('username')
         password = attrs.get('key')
-        print(db,"====db===")
-        print(url,"====url===")
-        print(username,"====username===")
-        print(password,"====password===")
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         is_auth = common.authenticate(db, username, password, {})
         if not is_auth:
@@ -26,8 +22,3 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validate_data):
         return User.objects.create_user(**validate_data)
 
-class UserLoginSerializer(serializers.ModelSerializer):
-  username = serializers.EmailField(max_length=255)
-  class Meta:
-    model = User
-    fields = ['username','key','db','url']
