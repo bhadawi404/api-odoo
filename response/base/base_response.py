@@ -1,15 +1,15 @@
 import xmlrpc.client
 from datetime import datetime
 
-# url = 'https://v4.amtiss.com'
-# db = 'v4'
-# username = 'admin' 
-# password = '4mti55'
-
-url = 'http://localhost:8015'
-db = 'demo-warehouse'
+url = 'https://v4.amtiss.com'
+db = 'v4'
 username = 'admin' 
-password = 'admin'
+password = '4mti55'
+
+# url = 'http://localhost:8015'
+# db = 'demo-warehouse'
+# username = 'admin' 
+# password = 'admin'
 
 # url = 'http://localhost:8015'
 # db = 'v4_121222'
@@ -152,6 +152,9 @@ class BaseResponse(object):
                     'ScheduleDate': x['scheduled_date'],
                     # 'MRID': x['mr_id'],
                     # 'AssetId': x['asset_id'],
+                    'LocationSourceId': x['location_id'][0],
+                    'LocationDestinationId': x['location_dest_id'][0],
+                    'CompanyId': x['company_id'][0],
                     'InternalTransferLine': linesIT,
                 })
         return internal
@@ -201,6 +204,9 @@ class BaseResponse(object):
                     'SourceLocation': x['location_id'][1],
                     'DestinationLocation':x['location_dest_id'][1],
                     'ScheduleDate': x['scheduled_date'],
+                    'LocationSourceId': x['location_id'][0],
+                    'LocationDestinationId': x['location_dest_id'][0],
+                    'CompanyId': x['company_id'][0],
                     # 'MRID': x['mr_id'],
                     # 'AssetId': x['asset_id'],
                     'InternalTransferLine': linesIT,
@@ -252,6 +258,9 @@ class BaseResponse(object):
                     'SourceLocation': x['location_id'][1],
                     'DestinationLocation':x['location_dest_id'][1],
                     'ScheduleDate': x['scheduled_date'],
+                    'LocationSourceId': x['location_id'][0],
+                    'LocationDestinationId': x['location_dest_id'][0],
+                    'CompanyId': x['company_id'][0],
                     # 'MRID': x['mr_id'],
                     # 'AssetId': x['asset_id'],
                     'ConsumeLine': linesConsume,
@@ -290,6 +299,9 @@ class BaseResponse(object):
                     'SourceLocation': x['location_id'][1],
                     'DestinationLocation':x['location_dest_id'][1],
                     'ScheduleDate': x['scheduled_date'],
+                    'LocationSourceId': x['location_id'][0],
+                    'LocationDestinationId': x['location_dest_id'][0],
+                    'CompanyId': x['company_id'][0],
                     # 'MRID': x['mr_id'],
                     # 'AssetId': x['asset_id'],
                     'ReturnLine': linesReturn,
@@ -409,7 +421,6 @@ class BaseResponse(object):
                             "reservation_date":date_now
                         }
                     ])
-                    print("dc")
                 models.execute_kw(db, uid, password, 'stock.move', 'write', [[ids_stock_move], {'state': "assigned","reservation_date":date_now}])
             models.execute_kw(db, uid, password, 'stock.picking', 'write', [[pickingid], {'state': "assigned"}])
             
@@ -423,6 +434,9 @@ class BaseResponse(object):
         product = request.data['product']
         date_now = datetime.now()
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        location_ids = request.data['LocationSourceId']
+        destination_ids = request.data['LocationDestinationId']
+        company_ids = request.data['CompanyId']
         for x in response:
             picking_ids = x['id']
             location_id = x['location_id']
@@ -430,9 +444,9 @@ class BaseResponse(object):
             company_id = x['company_id']
             
             for pd in product:
-                idprod = pd['productId']
+                product_id = pd['productId']
                 qty_done = pd['qty_done']
-                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids],['product_id','=',idprod]]], {'fields': ['product_qty','id','product_uom_qty','qty_done','state','move_id']})
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids],['product_id','=',product_id]]], {'fields': ['product_qty','id','product_uom_qty','qty_done','state','move_id']})
                 for move in stock_move:
                     move_ids = move['id']
                     move = move['move_id']
@@ -445,25 +459,39 @@ class BaseResponse(object):
                     models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
 
                     models.execute_kw(db, uid, password, 'stock.move', 'write', [[move], {'state': "done"}])
-           
-                    models.execute_kw(db, uid, password, 'stock.quant', 'create', [
-                                {
-                                'product_id': idprod,
-                                'company_id' : company_id,
-                                'location_id' : location_dest_id,
-                                'in_date'    : now,
-                                'quantity'   : qty_done,
-                                }
-                                ])
-                    models.execute_kw(db, uid, password, 'stock.quant', 'create', [
-                                {
-                                'product_id': idprod,
-                                'company_id' : company_id,
-                                'location_id' : location_id,
-                                'in_date'    : now,
-                                'quantity'   : qty_done-(qty_done*2),
-                                }
-                                ])
+
+                    
+                    cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+                    if cek_product_dest:
+                        stock_quant_ids = cek_product_dest[0]['id']
+                        quantity_stock = cek_product_dest[0]['quantity'] + qty_done
+                        models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
+                    else :
+                        models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                            {
+                                            'product_id': product_id,
+                                            'company_id' : company_ids,
+                                            'location_id' : destination_ids,
+                                            'in_date'    : now,
+                                            'quantity'   : qty_done,
+                                            }
+                                            ])
+                    cek_product_lock = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',location_ids]]], {'fields': ['id','quantity']})
+                    if cek_product_lock:
+                        stock_quant_lock_ids = cek_product_lock[0]['id']
+                        quantity_stock_lock = cek_product_lock[0]['quantity'] - qty_done
+                        models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_lock_ids], {'quantity': quantity_stock_lock}])
+                    else:
+                        models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                    {
+                                    'product_id': product_id,
+                                    'company_id' : company_ids,
+                                    'location_id' : location_ids,
+                                    'in_date'    : now,
+                                    'quantity'   : qty_done-(qty_done*2),
+                                    }
+                                    ])
+                    
             models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
                         
             return True           
@@ -539,5 +567,5 @@ class BaseResponse(object):
                                     }
                                     ])
                         
-            return True        
+            return True             
                 
