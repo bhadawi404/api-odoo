@@ -229,7 +229,7 @@ class BaseResponse(object):
             models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
             consume_cek = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Consume']]], {'fields': ['name']})
 
-            # if len(consume_cek) > 0 & x['state']=='approved':
+            # if len(consume_cek) > 0 & x['state']=='assigned':
             if len(consume_cek) > 0:
                 stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','qty_done','product_qty','picking_id','id']})
                 linesConsume=[]
@@ -433,6 +433,76 @@ class BaseResponse(object):
             return True
     
     def validate_internal_transfer_in(self, response, request):
+        validate = []
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        product = request.data['product']
+        date_now = datetime.now()
+        now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        location_ids = request.data['LocationSourceId']
+        destination_ids = request.data['LocationDestinationId']
+        company_ids = request.data['CompanyId']
+        for x in response:
+            picking_ids = x['id']
+            location_id = x['location_id']
+            location_dest_id = x['location_dest_id']
+            company_id = x['company_id']
+            
+            for pd in product:
+                product_id = pd['productId']
+                qty_done = pd['qty_done']
+                stock_move  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['picking_id','=',picking_ids],['product_id','=',product_id]]], {'fields': ['product_qty','id','product_uom_qty','qty_done','state','move_id']})
+                for move in stock_move:
+                    move_ids = move['id']
+                    move = move['move_id']
+                    
+                    # uom_qty = qty_done - move['product_uom_qty']
+                    vals = {
+                        "qty_done": qty_done,
+                        "state": 'done'
+                    }
+                    models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_ids], vals])
+
+                    models.execute_kw(db, uid, password, 'stock.move', 'write', [[move], {'state': "done"}])
+
+                    
+                    cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+                    if cek_product_dest:
+                        stock_quant_ids = cek_product_dest[0]['id']
+                        quantity_stock = cek_product_dest[0]['quantity'] + qty_done
+                        models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
+                    else :
+                        models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                            {
+                                            'product_id': product_id,
+                                            'company_id' : company_ids,
+                                            'location_id' : destination_ids,
+                                            'in_date'    : now,
+                                            'quantity'   : qty_done,
+                                            }
+                                            ])
+                    cek_product_lock = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',location_ids]]], {'fields': ['id','quantity']})
+                    if cek_product_lock:
+                        stock_quant_lock_ids = cek_product_lock[0]['id']
+                        quantity_stock_lock = cek_product_lock[0]['quantity'] - qty_done
+                        models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_lock_ids], {'quantity': quantity_stock_lock}])
+                    else:
+                        models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                    {
+                                    'product_id': product_id,
+                                    'company_id' : company_ids,
+                                    'location_id' : location_ids,
+                                    'in_date'    : now,
+                                    'quantity'   : qty_done-(qty_done*2),
+                                    }
+                                    ])
+                    
+            models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
+                        
+            return True  
+
+    def validate_consume(self, response, request):
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
