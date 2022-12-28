@@ -12,7 +12,7 @@ password = '4mti55'
 # password = 'admin'
 
 # url = 'http://localhost:8015'
-# db = 'v4_121222'
+# db = 'v4_271222'
 # username = 'admin' #username odoo
 # password = '4mti55'
 
@@ -392,7 +392,7 @@ class BaseResponse(object):
 
     def validate_internal_transfer_out(self, response, request):
         validate = []
-        
+    
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
