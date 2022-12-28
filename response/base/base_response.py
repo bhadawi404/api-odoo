@@ -132,7 +132,7 @@ class BaseResponse(object):
                     qty_received = 0
                     for rc in received:
                         qty_received = rc['qty_done']
-                    barcode_obj  = models.execute_kw(db, uid, password, 'product.template', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
                     barcode = barcode_obj[0]['barcode']
                     linesIT.append(
                         {
@@ -187,8 +187,11 @@ class BaseResponse(object):
                     print(stock_move)
                     for rc in received:
                         qty_done = rc['qty_done']
-                    barcode_obj  = models.execute_kw(db, uid, password, 'product.template', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                        print("nnn")
+                    print(product_ids)
+                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
                     barcode = barcode_obj[0]['barcode']
+                    print("BISA")
                     print(barcode_obj)
                     linesIT.append(
                         {
@@ -392,7 +395,6 @@ class BaseResponse(object):
 
     def validate_internal_transfer_out(self, response, request):
         validate = []
-    
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
@@ -400,33 +402,30 @@ class BaseResponse(object):
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         for x in response:
             pickingid = x['id']
-            
-            stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['id','company_id','product_id','product_uom','product_qty','product_uom_qty','location_dest_id','reference']})
+            stock_move = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',pickingid]]], {'fields': ['id','company_id','product_id','location_id','product_qty','product_uom_qty','location_dest_id','reference']})
             for sm in stock_move:
-                
                 ids_stock_move = sm['id']
-                cek_stock_move_line = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',ids_stock_move]]], {'fields': ['id']})
-                if not cek_stock_move_line:
-                    print("sini")
-                    models.execute_kw(db, uid, password, 'stock.move.line', 'create', [
-                        {
-                            "picking_id" : pickingid,
-                            "move_id":ids_stock_move,
-                            "company_id": sm['company_id'],
-                            "product_id": sm['product_id'],
-                            "product_uom_id": sm['product_uom_id'],
-                            "product_qty": sm['product_qty'],
-                            "product_uom_qty": sm['product_uom_qty'],
-                            "qty_done": 0,
-                            "date": now,
-                            "location_id": sm['location_id'],
-                            "product_uom_qty": sm['product_uom'],
-                            "location_dest_id": sm['location_dest_id'],
-                            "reference": sm['reference'],
-                            'state': "assigned",
-                            "reservation_date":date_now
-                        }
-                    ])
+                # cek_stock_move_line = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',ids_stock_move]]], {'fields': ['id']})
+                # if not cek_stock_move_line:
+                #     print("sini")
+                #     # print(sm['product_uom_id'])
+                #     vals = {
+                #             "picking_id" : pickingid,
+                #             "move_id":ids_stock_move,
+                #             "company_id": sm['company_id'][0],
+                #             "product_id": sm['product_id'][0],
+                #             # "product_uom_id": sm['product_uom_id'][0],
+                #             "product_qty": sm['product_qty'],
+                #             "product_uom_qty": sm['product_uom_qty'],
+                #             "qty_done": 0,
+                #             "location_id": sm['location_id'][0],
+                #             "location_dest_id": sm['location_dest_id'][0],
+                #             "reference": sm['reference'],
+                #             'state': "assigned"
+                #         }
+                #     print(vals)
+                #     models.execute_kw(db, uid, password, 'stock.move.line', 'create', [vals])
+                #     print("ddddd")
                 models.execute_kw(db, uid, password, 'stock.move', 'write', [[ids_stock_move], {'state': "assigned","reservation_date":date_now}])
             models.execute_kw(db, uid, password, 'stock.picking', 'write', [[pickingid], {'state': "assigned"}])
             
