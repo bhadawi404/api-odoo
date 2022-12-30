@@ -97,9 +97,9 @@ WSGI_APPLICATION = 'warehouse.wsgi.application'
 # }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'warehouse',
-        'USER': 'badawi',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'wms',
+        'USER': 'wmsusers',
         'PASSWORD': '080595',
         'HOST': 'localhost',
         'PORT': '5432',
