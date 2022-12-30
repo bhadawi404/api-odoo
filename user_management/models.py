@@ -19,7 +19,7 @@ class UserManager(BaseUserManager):
           company_name=company_name,
       )
 
-    #   user.set_password(password)
+      user.set_password(password)
       user.save(using=self._db)
       return user
 
