@@ -7,13 +7,13 @@ class UserModelAdmin(BaseUserAdmin):
   list_filter = ('is_active',)
   fieldsets = (
       ('User Credentials', {'fields': ('email', 'password')}),
-      ('Personal info', {'fields': ('url','db','key','location_name','company_name')}),
+      ('Personal info', {'fields': ('url','db','location_name','company_name')}),
       ('Permissions', {'fields': ('is_admin','is_active')}),
   )
   add_fieldsets = (
       (None, {
           'classes': ('wide',),
-          'fields': ('db', 'url', 'key'),
+          'fields': ('db', 'url'),
       }),
   )
   search_fields = ('email',)
