@@ -13,11 +13,16 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 import json
 import os
+from user_management.renderers import UserRenderer
+
+from user_management.serializers import UserLoginSerializer, UserSerializer
 
 
 
 class base_controller(generics.GenericAPIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+    renderer_classes = [UserRenderer]
 
 def controller_translator(controllerName):
     result = ""
@@ -81,7 +86,8 @@ def controller_response(controllerName):
     return result
 
 @api_view(['GET'])
-def page(request, controllerName):
+def page(request, controllerName, format=None):
+    serializer = UserSerializer(request.user)
     tes =[]
     modelDA = BaseDA()
     modelResponse = BaseResponse()
@@ -92,7 +98,7 @@ def page(request, controllerName):
     limit = request.query_params.get('limit', False)
     offset = request.query_params.get('offset', False)
     try:
-        response = modelDA.getall(controller,limit,offset)
+        response = modelDA.getall(controller,limit,offset,serializer)
         if response == 'Access Denied':
             error_message = 'Access Denied'
             content = {
@@ -123,8 +129,14 @@ def page(request, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
-
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
+        
+    
     content = {
         "statusCode": 200,
         "statusCodeDesc": 'OK',
@@ -138,7 +150,7 @@ def page(request, controllerName):
 
 @api_view(['GET'])
 def detail(request, barcode, controllerName):
-    
+    serializer = UserSerializer(request.user)
     modelDA = BaseDA()
     modelResponse = BaseResponse()
     controller = controller_translator(controllerName)
@@ -148,7 +160,7 @@ def detail(request, barcode, controllerName):
     error_message = []
 
     try:
-        response = modelDA.getbybarcode(controller,barcode)
+        response = modelDA.getbybarcode(controller,barcode, serializer)
         if response == 'Access Denied':
             error_message = 'Access Denied'
             content = {
@@ -170,7 +182,12 @@ def detail(request, barcode, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
 
     content = {
         "statusCode": 200,
@@ -185,6 +202,7 @@ def detail(request, barcode, controllerName):
 
 @api_view(['GET'])
 def detail_id(request, id, controllerName):
+    serializer = UserSerializer(request.user)
     print("masuk sini")
     modelDA = BaseDA()
     modelResponse = BaseResponse()
@@ -195,7 +213,7 @@ def detail_id(request, id, controllerName):
     error_message = []
     
     try:
-        response = modelDA.getbyid(controller,id)
+        response = modelDA.getbyid(controller,id,serializer)
         if response == 'Access Denied':
             error_message = 'Access Denied'
             content = {
@@ -217,7 +235,12 @@ def detail_id(request, id, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
 
     content = {
         "statusCode": 200,
@@ -232,6 +255,7 @@ def detail_id(request, id, controllerName):
 
 @api_view(['GET'])
 def scan(request, controllerName):
+    serializer = UserSerializer(request.user)
     print("bisa")
     barcode = request.data['barcode']
     modelDA = BaseDA()
@@ -243,8 +267,10 @@ def scan(request, controllerName):
     error_message = []
 
     try:
-        response = modelDA.getbyidscan(controller,barcode)
-        dataResponse = eval(responseDA)(response)
+        
+        response = modelDA.getbyidscan(controller,barcode,serializer)
+        dataResponse = eval(responseDA)(response,serializer)
+        print(dataResponse,"==erere==")
         
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
@@ -259,7 +285,12 @@ def scan(request, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
 
     content = {
         "statusCode": 200,
@@ -275,6 +306,7 @@ def scan(request, controllerName):
 
 @api_view(['PUT'])
 def update(request, id, controllerName):
+    serializer = UserSerializer(request.user)
     modelDA = BaseDA()
     modelResponse = BaseResponse()
     controller = controller_translator(controllerName)
@@ -284,7 +316,7 @@ def update(request, id, controllerName):
     error_message = []
     try:
         response = modelDA.update(controller,id)
-        dataResponse = eval(responseDA)(response, request)
+        dataResponse = eval(responseDA)(response, request, serializer)
         
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
@@ -299,7 +331,12 @@ def update(request, id, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
 
     content = {
         "statusCode": 200,
@@ -316,6 +353,7 @@ def update(request, id, controllerName):
 @api_view(['PUT'])
 def validate(request, controllerName):
     # barcode = request.data['barcode']
+    serializer = UserSerializer(request.user)
     modelDA = BaseDA()
     modelResponse = BaseResponse()
     controller = controller_translator(controllerName)
@@ -325,7 +363,7 @@ def validate(request, controllerName):
     error_message = []
     try:
         # response = modelDA.update(controller,request)
-        dataResponse = eval(responseDA)(request)
+        dataResponse = eval(responseDA)(request,serializer)
         
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
@@ -340,7 +378,12 @@ def validate(request, controllerName):
         # data = response
         error_message = []
     except Exception as ex:
-        error_message.append(str(ex))
+        if 'AnonymousUser' in str(ex):
+            error_message = 'Autorization Token'
+            content = {
+                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
+            }
+            return Response(status=status.HTTP_401_UNAUTHORIZED, data=content)
 
     content = {
         "statusCode": 200,

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-wf$nb3u8$@3me5&48iqs--_q*)yri6lfy$1jy3zqp6e@e^g$!a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['149.129.233.161','127.0.0.1']
 
 
 # Application definition
@@ -49,7 +49,8 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    
 }
 
 MIDDLEWARE = [
@@ -98,7 +99,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'warehouse',
-        'USER': 'wms',
+        'USER': 'badawi',
         'PASSWORD': '080595',
         'HOST': 'localhost',
         'PORT': '5432',

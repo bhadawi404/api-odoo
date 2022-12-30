@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from user_management.renderers import UserRenderer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+import xmlrpc.client
 
 # Generate Token Manually
 def get_tokens_for_user(user):
@@ -32,9 +33,15 @@ class UserLoginView(APIView):
     serializer.is_valid(raise_exception=True)
     email = serializer.data.get('email')
     password = serializer.data.get('password')
-    user = authenticate(email=email, password=password)
-    if user is not None:
+    db = serializer.data.get('db')
+    url = serializer.data.get('url')
+    
+    user = authenticate(email=email, password=password, db=db, url=url)
+    
+    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+    uid = common.authenticate(db, email, password, {})
+    if user is not None and uid:
       token = get_tokens_for_user(user)
-      return Response({'token':token, 'msg':'Login Success'}, status=status.HTTP_200_OK)
-    else:
-      return Response({'errors':{'non_field_errors':['Email or Password is not Valid']}}, status=status.HTTP_404_NOT_FOUND) 
+      return Response({'token':token, 'msg':'Login Success','db': db}, status=status.HTTP_200_OK)
+    if not uid and user is None:
+      return Response({'msg':'Access Denined'}, status=status.HTTP_404_NOT_FOUND) 

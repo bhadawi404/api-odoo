@@ -1,21 +1,6 @@
 import xmlrpc.client
 from datetime import datetime
 
-url = 'https://v4.amtiss.com'
-db = 'v4'
-username = 'admin' 
-password = '4mti55'
-
-# url = 'http://localhost:8015'
-# db = 'demo-warehouse'
-# username = 'admin' 
-# password = 'admin'
-
-# url = 'http://localhost:8015'
-# db = 'v4_271222'
-# username = 'admin' #username odoo
-# password = '4mti55'
-
 class BaseResponse(object):
     def product(self, response):
         result = []
@@ -43,8 +28,13 @@ class BaseResponse(object):
             })
         return result
     
-    def purchase_order(self, response):
+    def purchase_order(self, response, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         purchase = []
+        print("masuk response")
         for x in response:
             if x['state'] == 'assigned':
                 origin = x['origin']
@@ -107,7 +97,11 @@ class BaseResponse(object):
                     })
         return purchase
         
-    def internal_transfer_in(self, response):
+    def internal_transfer_in(self, response, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         internal = []
         # print(response)
         for x in response:
@@ -161,7 +155,11 @@ class BaseResponse(object):
                 })
         return internal
     
-    def internal_transfer_out(self, response):
+    def internal_transfer_out(self, response, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         internal = []
         
         for x in response:
@@ -221,7 +219,11 @@ class BaseResponse(object):
         
         return internal
 
-    def consume(self, response):
+    def consume(self, response, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         consume = []
         # print(response)
         for x in response:
@@ -276,7 +278,11 @@ class BaseResponse(object):
                 })
         return consume
     
-    def return_product(self, response):
+    def return_product(self, response, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         return_product = []
         # print(response)
         for x in response:
@@ -317,7 +323,11 @@ class BaseResponse(object):
                 })
         return return_product
 
-    def validate_purchase(self, request):
+    def validate_purchase(self, request, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
         uid = common.authenticate(db, username, password, {})
@@ -393,7 +403,11 @@ class BaseResponse(object):
         
         return True
 
-    def validate_internal_transfer_out(self, response, request):
+    def validate_internal_transfer_out(self, response, request,serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
@@ -431,7 +445,11 @@ class BaseResponse(object):
             
             return True
     
-    def validate_internal_transfer_in(self, response, request):
+    def validate_internal_transfer_in(self, response, request,serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
@@ -501,7 +519,11 @@ class BaseResponse(object):
                         
             return True  
 
-    def validate_consume(self, response, request):
+    def validate_consume(self, response, request, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
@@ -571,7 +593,11 @@ class BaseResponse(object):
                         
             return True           
     
-    def validate_return(self, response, request):
+    def validate_return(self, response, request, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
         validate = []
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})

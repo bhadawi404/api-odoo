@@ -5,7 +5,7 @@ import xmlrpc.client
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields=['email', 'db', 'url','password','company_name','location_name']
+        fields=['email', 'db', 'url','password','company_name','location_name','key']
         
     
     def validate(self, attrs):
@@ -15,6 +15,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         password = attrs.get('password')
         location_name = attrs.get('location_name')
         company_name = attrs.get('company_name')
+        key = attrs.get('key')
         if not password:
             raise serializers.ValidationError("Sorry Register Failed")
         return attrs
@@ -26,4 +27,11 @@ class UserLoginSerializer(serializers.ModelSerializer):
   email = serializers.EmailField(max_length=255)
   class Meta:
     model = User
-    fields = ['email', 'password']
+    fields = ['email', 'password','db','url']
+    
+    
+        
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields=['email', 'db', 'url','password','company_name','location_name','key']
