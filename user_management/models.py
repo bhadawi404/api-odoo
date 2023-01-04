@@ -3,38 +3,36 @@ from django.contrib.auth.models import BaseUserManager,AbstractBaseUser
 
 #  Custom User Manager
 class UserManager(BaseUserManager):
-  def create_user(self, username, db, url, location_name, company_name,password=None):
+  def create_user(self, email, db, url, location_name, key,company_name,password=None):
       """
-      Creates and saves a User with the given username, db, url, key and password.
+      Creates and saves a User with the given email, db, url, key and password.
       """
-      if not username:
-          raise ValueError('User must have an username address')
+      if not email:
+          raise ValueError('User must have an email address')
 
       user = self.model(
-          username=self.normalize_email(username),
+          email=self.normalize_email(email),
           db=db,
           url=url,
           password=password,
+          key=key,
           location_name=location_name,
           company_name=company_name,
       )
-
-    #   user.set_password(password)
+      
+      user.set_password(password)
       user.save(using=self._db)
       return user
 
-  def create_superuser(self, username, db, url, key,location_name,company_name, password=None):
+  def create_superuser(self, email, db, url, password=None):
       """
       Creates and saves a superuser with the given email, name, tc and password.
       """
       user = self.create_user(
-          username,
+          email,
           password=password,
           db=db,
           url=url,
-          key=key,
-          location_name=location_name,
-          company_name=company_name,
       )
       user.is_admin = True
       user.save(using=self._db)
@@ -42,14 +40,14 @@ class UserManager(BaseUserManager):
   
 #  Custom User Model
 class User(AbstractBaseUser):
-  username = models.EmailField(
+  email = models.EmailField(
       verbose_name='Email',
       max_length=255,
       unique=True,
   )
+  key = models.CharField(max_length=200)
   db = models.CharField(max_length=200)
   url = models.CharField(max_length=200)
-  key = models.CharField(max_length=200)
   location_name = models.CharField(max_length=200)
   company_name =  models.CharField(max_length=200)
   is_active = models.BooleanField(default=True)
@@ -59,11 +57,11 @@ class User(AbstractBaseUser):
 
   objects = UserManager()
 
-  USERNAME_FIELD = 'username'
-  REQUIRED_FIELDS = ['db', 'url','key']
+  USERNAME_FIELD = 'email'
+  REQUIRED_FIELDS = ['db', 'url']
 
   def __str__(self):
-      return self.username
+      return self.email
 
   def has_perm(self, perm, obj=None):
       "Does the user have a specific permission?"

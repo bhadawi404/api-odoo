@@ -49,7 +49,8 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    
 }
 
 MIDDLEWARE = [
@@ -96,9 +97,9 @@ WSGI_APPLICATION = 'warehouse.wsgi.application'
 # }
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'warehouse',
-        'USER': 'indosoftware',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'wms',
+        'USER': 'wmsusers',
         'PASSWORD': '080595',
         'HOST': 'localhost',
         'PORT': '5432',
@@ -141,6 +142,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
