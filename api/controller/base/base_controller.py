@@ -50,6 +50,8 @@ def controller_translator(controllerName):
             result = 'stock.picking'
         elif str(controllerName).lower() == 'return':
             result = 'stock.picking'   
+        elif str(controllerName).lower() == 'validate-return':
+            result = 'stock.picking'   
         
 
     return result
@@ -80,7 +82,7 @@ def controller_response(controllerName):
     elif str(controllerName).lower() == 'return':
         result = 'modelResponse.return_product'
     elif str(controllerName).lower() == 'validate-return':
-            result = 'stock.picking'
+            result = 'modelResponse.validate_return'
     
 
     return result
