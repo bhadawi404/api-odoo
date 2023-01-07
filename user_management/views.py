@@ -10,10 +10,11 @@ import xmlrpc.client
 # Generate Token Manually
 def get_tokens_for_user(user):
   refresh = RefreshToken.for_user(user)
-  return {
-      'refresh': str(refresh),
-      'access': str(refresh.access_token),
-  }
+  # return {
+  #     'refresh': str(refresh),
+  #     'access': str(refresh.access_token),
+  # }
+  return str(refresh.access_token)
 
 class UserRegistrationView(APIView):
   renderer_classes = [UserRenderer]
