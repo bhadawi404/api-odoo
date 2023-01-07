@@ -5,7 +5,6 @@ from user_management.serializers import UserLoginSerializer, UserRegistrationSer
 from django.contrib.auth import authenticate
 from user_management.renderers import UserRenderer
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
 import xmlrpc.client
 
 # Generate Token Manually
@@ -33,15 +32,19 @@ class UserLoginView(APIView):
     serializer.is_valid(raise_exception=True)
     email = serializer.data.get('email')
     password = serializer.data.get('password')
-    db = serializer.data.get('db')
-    url = serializer.data.get('url')
+
     
-    user = authenticate(email=email, password=password, db=db, url=url)
+    user = authenticate(email=email, password=password)
     
-    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-    uid = common.authenticate(db, email, password, {})
-    if user is not None and uid:
-      token = get_tokens_for_user(user)
-      return Response({'token':token, 'msg':'Login Success','db': db}, status=status.HTTP_200_OK)
-    if not uid and user is None:
+    
+    if user is not None:
+      print(user.url,"==masuk s===")
+      common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(user.url))
+      uid = common.authenticate(user.db, email, password, {})
+      if uid:
+        token = get_tokens_for_user(user)
+        return Response({'token':token, 'msg':'Login Success'}, status=status.HTTP_200_OK)
+      if not uid:
+        return Response({'msg':'Access Denined'}, status=status.HTTP_404_NOT_FOUND) 
+    if user is None:
       return Response({'msg':'Access Denined'}, status=status.HTTP_404_NOT_FOUND) 
