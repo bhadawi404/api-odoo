@@ -45,6 +45,6 @@ class UserLoginView(APIView):
         token = get_tokens_for_user(user)
         return Response({'token':token, 'msg':'Login Success'}, status=status.HTTP_200_OK)
       if not uid:
-        return Response({'msg':'Access Denined'}, status=status.HTTP_404_NOT_FOUND) 
+        return Response({'msg':'Tidak Terdaftar di amtiss'}, status=status.HTTP_404_NOT_FOUND) 
     if user is None:
-      return Response({'msg':'Access Denined'}, status=status.HTTP_404_NOT_FOUND) 
+      return Response({'msg':'email or password is valid'}, status=status.HTTP_404_NOT_FOUND) 
