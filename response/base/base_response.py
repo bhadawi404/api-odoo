@@ -407,7 +407,9 @@ class BaseResponse(object):
                             ])
             #create backorder
             if all_qty < order_line[0]['product_qty']:
+                print("masuk 1")
                 if not picking_new_id:
+                    print("masuk 2")
                     #create stock Picking
                     picking_old = models.execute_kw(db, uid, password, 'stock.picking', 'search_read', [[['id','=',picking_ids]]], 
                     {'fields': 
@@ -416,66 +418,99 @@ class BaseResponse(object):
                     'location_dest_id','picking_type_id','partner_id','company_id','mr_id',
                     'asset_id','assignment_id','sale_id','amtiss_material_request_id',
                     'batch_id','picking_group']}) 
-                    if picking_old['picking_group']:
-                        create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
-                                    {
-                                    'message_main_attachment_id': picking_old[0]['message_main_attachment_id'],
-                                    'origin': picking_old[0]['origin'],
-                                    'note': picking_old[0]['note'],
-                                    'backorder_id' : picking_ids,
-                                    'move_type': picking_old['move_type'],
-                                    'state': 'assigned',
-                                    'group_id': picking_old[0]['group_id'],
-                                    'priority': picking_old['priority'],
-                                    'scheduled_date': picking_old[0]['scheduled_date'],
-                                    'date_deadline': picking_old[0]['date_deadline'],
-                                    'date': now,
-                                    'has_deadline_issue': picking_old[0]['has_deadline_issue'],
-                                    'location_id': picking_old[0]['location_id'],
-                                    'location_dest_id': picking_old[0]['location_dest_id'],
-                                    'picking_type_id': picking_old[0]['picking_type_id'],
-                                    'partner_id': picking_old[0]['partner_id'],
-                                    'company_id': picking_old[0]['company_id'],
-                                    'mr_id': picking_old[0]['mr_id'],
-                                    'asset_id': picking_old[0]['asset_id'],
-                                    'assignment_id': picking_old[0]['assignment_id'],
-                                    'amtiss_material_request_id': picking_old[0]['amtiss_material_request_id'],
-                                    'batch_id': picking_old[0]['batch_id'],
-                                    'picking_group': picking_old[0]['picking_group'],
-                                    
-                                    }
-                                    ])
-                    else:
-                        create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
-                                    {
-                                    'message_main_attachment_id': picking_old[0]['message_main_attachment_id'],
-                                    'origin': picking_old[0]['origin'],
-                                    'note': picking_old[0]['note'],
-                                    'backorder_id' : picking_ids,
-                                    'move_type': picking_old['move_type'],
-                                    'state': 'assigned',
-                                    'group_id': picking_old[0]['group_id'],
-                                    'priority': picking_old['priority'],
-                                    'scheduled_date': picking_old[0]['scheduled_date'],
-                                    'date_deadline': picking_old[0]['date_deadline'],
-                                    'date': now,
-                                    'has_deadline_issue': picking_old[0]['has_deadline_issue'],
-                                    'location_id': picking_old[0]['location_id'],
-                                    'location_dest_id': picking_old[0]['location_dest_id'],
-                                    'picking_type_id': picking_old[0]['picking_type_id'],
-                                    'partner_id': picking_old[0]['partner_id'],
-                                    'company_id': picking_old[0]['company_id'],
-                                    'mr_id': picking_old[0]['mr_id'],
-                                    'asset_id': picking_old[0]['asset_id'],
-                                    'assignment_id': picking_old[0]['assignment_id'],
-                                    'amtiss_material_request_id': picking_old[0]['amtiss_material_request_id'],
-                                    'batch_id': picking_old[0]['batch_id'],
-                                    'picking_group': picking_ids,
-                                    }
-                                    ])
-                    picking_new_id =  create_picking.id 
+                    
+                    for x in picking_old:
+                        # print(x['amtiss_material_request_id'][0])
+                        picking_group = x['picking_group']
+                        message_main_attachment_id = x['message_main_attachment_id']
+                        origin = x['origin']
+                        backorder_id = picking_ids
+                        move_type = x['move_type']
+                        group_id = x['group_id'][0]
+                        priority = x['priority']
+                        scheduled_date = x['scheduled_date']
+                        date_deadline = x['date_deadline']
+                        has_deadline_issue = x['has_deadline_issue']
+                        location_id = x['location_id'][0]
+                        location_dest_id = x['location_dest_id'][0]
+                        picking_type_id = x['picking_type_id'][0]
+                        partner_id = x['partner_id'][0]
+                        company_id = x['company_id'][0]
+                        # mr_id = x['mr_id'][0]
+                        # asset_id = x['asset_id'][0]
+                        # assignment_id = x['assignment_id'][0]
+                        # amtiss_material_request_id = x['amtiss_material_request_id'][0]
+                        # batch_id = x['batch_id'][0]
+                        picking_group = picking_ids
+                        note = x['note']
+                        
+                        if x['picking_group']:
+                            print("masuk 3")
+                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
+                                        {
+                                        'message_main_attachment_id': message_main_attachment_id,
+                                        'origin': origin,
+                                        'note': note,
+                                        'backorder_id' : picking_ids,
+                                        'move_type': move_type,
+                                        'state': 'assigned',
+                                        'group_id': group_id,
+                                        'priority': priority,
+                                        'scheduled_date': scheduled_date,
+                                        'date_deadline': date_deadline,
+                                        'date': now,
+                                        'has_deadline_issue': has_deadline_issue,
+                                        'location_id': location_id,
+                                        'location_dest_id': location_dest_id,
+                                        'picking_type_id': picking_type_id,
+                                        'partner_id': partner_id,
+                                        'company_id': company_id,
+                                        # 'mr_id': mr_id,
+                                        # 'asset_id': asset_id,
+                                        # 'assignment_id': assignment_id,
+                                        # 'amtiss_material_request_id': amtiss_material_request_id,
+                                        # 'batch_id': batch_id,
+                                        'picking_group': x['picking_group'][0],
+                                        
+                                        }
+                                        ])
+                        else:
+                            print("masuk 4")
+                            print(move_type)
+                            vals_p = {
+                                        'message_main_attachment_id': x['message_main_attachment_id'],
+                                        'origin': origin,
+                                        'note': note,
+                                        'backorder_id' : picking_ids,
+                                        'move_type': move_type,
+                                        'state': 'assigned',
+                                        'group_id': group_id,
+                                        'priority': priority,
+                                        'scheduled_date': scheduled_date,
+                                        'date_deadline': date_deadline,
+                                        'date': now,
+                                        'has_deadline_issue': has_deadline_issue,
+                                        'location_id': location_id,
+                                        'location_dest_id': location_dest_id,
+                                        'picking_type_id': picking_type_id,
+                                        'partner_id': partner_id,
+                                        'company_id': company_id,
+                                        # 'mr_id': mr_id,
+                                        # 'asset_id': asset_id,
+                                        # 'assignment_id': assignment_id,
+                                        # 'amtiss_material_request_id': amtiss_material_request_id,
+                                        # 'batch_id': batch_id,
+                                        'picking_group': picking_ids,
+                                        }
+                            print(vals_p)
+                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
+                                vals_p
+                                        
+                                        ])
+                    
                     print("pic")
-                    print(picking_new_id) 
+                    print(create_picking) 
+                    picking_new_id =  create_picking
 
                     #create stock move
                     move_old = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['id','=',move_ids]]], 
@@ -518,6 +553,7 @@ class BaseResponse(object):
                                     }
                                     ])
                 else:
+                    print("masuk 5")
                     #create stock move
                     print("pic")
                     print(picking_new_id)
