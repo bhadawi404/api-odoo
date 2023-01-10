@@ -67,7 +67,7 @@ class BaseResponse(object):
                                 product_qty = move_line['product_qty']
                                 product_name = move_line['product_id'][1]
                                 qty_done = move_line['qty_done']
-                                barcode_obj  = models.execute_kw(db, uid, password, 'product.template', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                                barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
                                 barcode = barcode_obj[0]['barcode']
                                 move_line_list.append({
                                     "pickingId": picking_ids,
