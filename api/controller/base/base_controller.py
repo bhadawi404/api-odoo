@@ -174,12 +174,10 @@ def detail(request, barcode, controllerName):
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
             content = {
-                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
-                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-                "status": False,
-                "total_data": 0
+                "statusCode": 404,
+                "statusDesc": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
             }
-            return Response(status=status.HTTP_200_OK, data=content)
+            return Response(status=status.HTTP_404_NOT_FOUND, data=content)
         data = dataResponse
         # data = response
         error_message = []
@@ -227,12 +225,10 @@ def detail_id(request, id, controllerName):
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
             content = {
-                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
-                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-                "status": False,
-                "total_data": 0
+                "statusCode": 404,
+                "statusDesc": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
             }
-            return Response(status=status.HTTP_200_OK, data=content)
+            return Response(status=status.HTTP_404_NOT_FOUND, data=content)
         data = dataResponse
         # data = response
         error_message = []
@@ -277,12 +273,10 @@ def scan(request, controllerName):
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
             content = {
-                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
-                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-                "status": False,
-                "total_data": 0
+                "statusCode": 404,
+                "statusDesc": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
             }
-            return Response(status=status.HTTP_200_OK, data=content)
+            return Response(status=status.HTTP_404_NOT_FOUND, data=content)
         data = dataResponse
         # data = response
         error_message = []
@@ -323,12 +317,10 @@ def update(request, id, controllerName):
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
             content = {
-                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
-                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-                "status": False,
-                "total_data": 0
+                "statusCode": 404,
+                "statusDesc": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
             }
-            return Response(status=status.HTTP_200_OK, data=content)
+            return Response(status=status.HTTP_404_NOT_FOUND, data=content)
         data = dataResponse
         # data = response
         error_message = []
@@ -370,12 +362,10 @@ def validate(request, controllerName):
         if not dataResponse :
             error_message = 'DATA NOT FOUND'
             content = {
-                "error_message": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
-                "data": json.loads(json.dumps(data, default=lambda o: o.__dict__)),
-                "status": False,
-                "total_data": 0
+                "statusCode": 404,
+                "statusDesc": json.loads(json.dumps(error_message, default=lambda o: o.__dict__)),
             }
-            return Response(status=status.HTTP_200_OK, data=content)
+            return Response(status=status.HTTP_404_NOT_FOUND, data=content)
         data = dataResponse
         # data = response
         error_message = []
