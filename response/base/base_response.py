@@ -725,8 +725,6 @@ class BaseResponse(object):
             cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
             
             if cek_product_dest:
-                print("masuk")
-                print(cek_product_dest)
                 stock_quant_ids = cek_product_dest[0]['id']
                 quantity_stock = cek_product_dest[0]['quantity'] + qty_done
                 models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
@@ -773,11 +771,8 @@ class BaseResponse(object):
             print(product_qty)
             # create backorder
             if qty_done < product_qty:
-                print(picking_new_id)
-                print("masuk 1")
                 
                 if not picking_new_id:
-                    print("masuk 2")
                     #create stock Picking
                     picking_old = models.execute_kw(db, uid, password, 'stock.picking', 'search_read', [[['id','=',picking_ids]]], 
                     {'fields': 
@@ -881,7 +876,6 @@ class BaseResponse(object):
                             create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [vals_p])
                            
                     picking_new_id =  create_picking
-                    print(picking_new_id)
                     #create stock move
                     move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [moveids], {'fields': ['product_qty','name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline']})
                     
@@ -987,7 +981,7 @@ class BaseResponse(object):
                             warehouse_id = mv['warehouse_id'][0]
                         else:
                             warehouse_id = mv['warehouse_id']
-                            
+
                         to_refund = mv['to_refund']
                         reservation_date = mv['reservation_date']
                         next_serial_count = mv['next_serial_count']
