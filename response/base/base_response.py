@@ -359,6 +359,7 @@ class BaseResponse(object):
             qty_received = order_line[0]['qty_received']
             all_qty = qty_done + qty_received
             
+            
             vals_order_line = {
                 "qty_received":  all_qty
             } 
@@ -371,7 +372,6 @@ class BaseResponse(object):
             }
             #update Product uom qty 0, qty_done(request), state done
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_line_ids], vals_stock_move_line])
-            
             #update stock move state done
             models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
 
@@ -407,10 +407,10 @@ class BaseResponse(object):
                             }
                             ])
             #create backorder
+            
+            print(all_qty)
             if all_qty < order_line[0]['product_qty']:
-                print("masuk 1")
                 if not picking_new_id:
-                    print("masuk 2")
                     #create stock Picking
                     picking_old = models.execute_kw(db, uid, password, 'stock.picking', 'search_read', [[['id','=',picking_ids]]], 
                     {'fields': 
@@ -446,7 +446,6 @@ class BaseResponse(object):
                         note = x['note']
                         
                         if x['picking_group']:
-                            print("masuk 3")
                             create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
                                         {
                                         'message_main_attachment_id': message_main_attachment_id,
@@ -476,8 +475,6 @@ class BaseResponse(object):
                                         }
                                         ])
                         else:
-                            print("masuk 4")
-                            print(move_type)
                             vals_p = {
                                         'message_main_attachment_id': x['message_main_attachment_id'],
                                         'origin': origin,
@@ -503,22 +500,17 @@ class BaseResponse(object):
                                         # 'batch_id': batch_id,
                                         'picking_group': picking_ids,
                                         }
-                            print(vals_p)
-                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
-                                vals_p
-                                        
-                                        ])
+                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [vals_p])
                     
-                    print("pic")
-                    print(create_picking) 
                     picking_new_id =  create_picking
 
                     #create stock move
-                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [move_ids], {'fields': ['name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline']})
+                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [move_ids], {'fields': ['product_qty','name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline']})
                     for mv in move_old:
                         name = mv['name']
                         product_id = mv['product_id'][0]
                         product_uom_qty = mv['product_uom_qty'] - qty_done
+                        # product_qty = mv['product_qty'] - qty_done
                         product_uom = mv['product_uom'][0]
                         location_id = mv['location_id'][0]
                         location_dest_id = mv['location_dest_id'][0]
@@ -543,6 +535,7 @@ class BaseResponse(object):
                                 'name':name,
                                 'product_id':product_id,
                                 'product_uom_qty': product_uom_qty,
+                                # 'product_qty': product_qty,
                                 'product_uom': product_uom,
                                 'location_id': location_id,
                                 'location_dest_id': location_dest_id,
@@ -561,16 +554,29 @@ class BaseResponse(object):
                                 'is_inventory': is_inventory,
                                 'description_picking': description_picking
                         }
-                        print(vals)
-                        id = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
-                        print(id)
+                        move_id_new = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
+                        vals_line = {
+                                'picking_id': picking_id,
+                                'move_id':move_id_new,
+                                'company_id': company_ids,
+                                'product_id':product_id,
+                                'product_uom_id': product_uom,
+                                'product_uom_qty': product_uom_qty,
+                                # 'product_qty': product_qty,
+                                'qty_done': 0,
+                                'location_id': location_id,
+                                'location_dest_id': location_dest_id,
+                                'state' : 'assigned',
+                        }
+                        models.execute_kw(db, uid, password, 'stock.move.line', 'create', [vals_line])
                         
                 else:
-                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [move_ids], {'fields': ['name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline']})
+                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [move_ids], {'fields': ['product_qty','name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline']})
                     for mv in move_old:
                         name = mv['name']
                         product_id = mv['product_id'][0]
                         product_uom_qty = mv['product_uom_qty'] - qty_done
+                        # product_qty = mv['product_qty'] - qty_done
                         product_uom = mv['product_uom'][0]
                         location_id = mv['location_id'][0]
                         location_dest_id = mv['location_dest_id'][0]
@@ -595,6 +601,7 @@ class BaseResponse(object):
                                 'name':name,
                                 'product_id':product_id,
                                 'product_uom_qty': product_uom_qty,
+                                # 'product_qty': product_qty,
                                 'product_uom': product_uom,
                                 'location_id': location_id,
                                 'location_dest_id': location_dest_id,
@@ -613,9 +620,22 @@ class BaseResponse(object):
                                 'is_inventory': is_inventory,
                                 'description_picking': description_picking
                         }
-                        print(vals)
-                        id = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
-                        print(id) 
+                        move_id_new = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
+                        # create stock move line
+                        vals_line = {
+                                'picking_id': picking_id,
+                                'move_id':move_id_new,
+                                'company_id': company_ids,
+                                'product_id':product_id,
+                                'product_uom_id': product_uom,
+                                'product_uom_qty': product_uom_qty,
+                                # 'product_qty': product_qty,
+                                'qty_done': 0,
+                                'location_id': location_id,
+                                'location_dest_id': location_dest_id,
+                                'state' : 'assigned',
+                        } 
+                        models.execute_kw(db, uid, password, 'stock.move.line', 'create', [vals_line])
 
         #update State & date done di stock Picking
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
