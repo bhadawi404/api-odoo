@@ -33,6 +33,10 @@ class BaseResponse(object):
         db = serializer.data['db']
         username = serializer.data['email']
         password = serializer.data['key']
+        
+        #untuk validasi location user yang login
+        location_destination = serializer.data['location_name']
+        #end 
         purchase = []
         print("masuk response")
         for x in response:
@@ -54,6 +58,7 @@ class BaseResponse(object):
                         picking_ids = x['id']
                         move_data = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['id','purchase_line_id']})
                         move_line_list = []
+                        total_qty_request = []
                         for move in move_data:
                             move_ids = move['id']
                             purchase_line = move['purchase_line_id'][0]
@@ -61,6 +66,7 @@ class BaseResponse(object):
                             qty_received = order_line[0]['qty_received']
                             product_qty_request = order_line[0]['product_qty']
                             move_line_data = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',move['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
+                            total_qty_request.append(product_qty_request)
                             for move_line in move_line_data:
                                 move_line_ids = move_line['id']
                                 product_ids = move_line['product_id'][0]
@@ -94,6 +100,7 @@ class BaseResponse(object):
                         'purchaseOrderLocationSourceId': x['location_id'][0],
                         'purchaseOrderLocationDestinationId': x['location_dest_id'][0],
                         'purchaseOrderCompanyId': x['company_id'][0],
+                        "purchaseOrderTotalQtyRequest": sum(total_qty_request),
                         "pickingId": picking_ids,
                     })
         return purchase
