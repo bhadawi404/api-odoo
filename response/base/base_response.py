@@ -375,7 +375,7 @@ class BaseResponse(object):
             #update Product uom qty 0, qty_done(request), state done
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_line_ids], vals_stock_move_line])
             #update stock move state done
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done",'product_uom_qty':qty_done}])
 
             cek_product = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id]]], {'fields': ['id']})
             
@@ -510,7 +510,7 @@ class BaseResponse(object):
                     for mv in move_old:
                         name = mv['name']
                         product_id = mv['product_id'][0]
-                        product_uom_qty = mv['product_uom_qty'] - qty_done
+                        product_uom_qty = qty_done
                         # product_qty = mv['product_qty'] - qty_done
                         product_uom = mv['product_uom'][0]
                         location_id = mv['location_id'][0]
