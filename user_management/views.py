@@ -44,7 +44,7 @@ class UserLoginView(APIView):
       uid = common.authenticate(user.db, email, password, {})
       if uid:
         token = get_tokens_for_user(user)
-        return Response({'token':token, 'status':True, 'user_id':user.id}, status=status.HTTP_200_OK)
+        return Response({'token':token, 'status':True, 'user_id':user.id, 'username':user.username}, status=status.HTTP_200_OK)
       if not uid:
         return Response({'msg':'Tidak Terdaftar di amtiss'}, status=status.HTTP_404_NOT_FOUND) 
     if user is None:
