@@ -251,7 +251,7 @@ def detail_id(request, id, controllerName):
 
     return Response(status=response_status, data=content)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def scan(request, controllerName):
     serializer = UserSerializer(request.user)
     print("bisa")
