@@ -40,69 +40,70 @@ class BaseResponse(object):
         purchase = []
         print("masuk response")
         for x in response:
-            if x['state'] == 'assigned':
-                origin = x['origin']
-                common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-                uid = common.authenticate(db, username, password, {})
-                models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-                purchase_data  = models.execute_kw(db, uid, password, 'purchase.order', 'search_read', [[['name','=',origin]]], {'fields': []})
-                if purchase_data:
-                    for data in purchase_data:
-                        purchase_ids = data['id']
-                        name = data['name']
-                        state = data['state']
-                        date_order = data['date_order']
-                        date_plan = data['date_planned']
-                        vendor_name = data['partner_id'][1]
-                        po_id = data['id']
-                        picking_ids = x['id']
-                        move_data = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['id','purchase_line_id']})
-                        move_line_list = []
-                        total_qty_request = []
-                        for move in move_data:
-                            move_ids = move['id']
-                            purchase_line = move['purchase_line_id'][0]
-                            order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',purchase_line]]], {'fields': ['qty_received','product_qty']})
-                            qty_received = order_line[0]['qty_received']
-                            product_qty_request = order_line[0]['product_qty']
-                            move_line_data = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',move['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
-                            total_qty_request.append(product_qty_request)
-                            for move_line in move_line_data:
-                                move_line_ids = move_line['id']
-                                product_ids = move_line['product_id'][0]
-                                product_qty = move_line['product_qty']
-                                product_name = move_line['product_id'][1]
-                                qty_done = move_line['qty_done']
-                                barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
-                                barcode = barcode_obj[0]['barcode']
-                                move_line_list.append({
-                                    
-                                    "orderLineId": purchase_line,
-                                    "moveId": move_ids,
-                                    "moveLineId": move_line_ids,
-                                    "productId": product_ids,
-                                    "productBarcode": barcode,
-                                    "productName": product_name,
-                                    "productQtyRequestPO": product_qty_request,
-                                    "productQtyReceived": qty_received,
-                                    "productQtyDemand": product_qty,
-                                    "productQtyDone": qty_done,
-                                    
-                                })   
-                    purchase.append({
-                        'purchaseOrderVendor': vendor_name,
-                        'purchaseOrderId': purchase_ids,
-                        'purchaseOrderName': name,
-                        'purhcaseOrderState':state,
-                        'purchaseOrderDateOrder': date_order,
-                        'purchaseOrderReceiptDate': date_plan,
-                        'purchaseOrderLine': move_line_list,
-                        'purchaseOrderLocationSourceId': x['location_id'][0],
-                        'purchaseOrderLocationDestinationId': x['location_dest_id'][0],
-                        'purchaseOrderCompanyId': x['company_id'][0],
-                        "purchaseOrderTotalQtyRequest": sum(total_qty_request),
-                        "pickingId": picking_ids,
-                    })
+            if not x['consume_id'] and not x['transfer_id']:
+                if x['state'] == 'assigned':
+                    origin = x['origin']
+                    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+                    uid = common.authenticate(db, username, password, {})
+                    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+                    purchase_data  = models.execute_kw(db, uid, password, 'purchase.order', 'search_read', [[['name','=',origin]]], {'fields': []})
+                    if purchase_data:
+                        for data in purchase_data:
+                            purchase_ids = data['id']
+                            name = data['name']
+                            state = data['state']
+                            date_order = data['date_order']
+                            date_plan = data['date_planned']
+                            vendor_name = data['partner_id'][1]
+                            po_id = data['id']
+                            picking_ids = x['id']
+                            move_data = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',picking_ids]]], {'fields': ['id','purchase_line_id']})
+                            move_line_list = []
+                            total_qty_request = []
+                            for move in move_data:
+                                move_ids = move['id']
+                                purchase_line = move['purchase_line_id'][0]
+                                order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',purchase_line]]], {'fields': ['qty_received','product_qty']})
+                                qty_received = order_line[0]['qty_received']
+                                product_qty_request = order_line[0]['product_qty']
+                                move_line_data = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',move['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
+                                total_qty_request.append(product_qty_request)
+                                for move_line in move_line_data:
+                                    move_line_ids = move_line['id']
+                                    product_ids = move_line['product_id'][0]
+                                    product_qty = move_line['product_qty']
+                                    product_name = move_line['product_id'][1]
+                                    qty_done = move_line['qty_done']
+                                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                                    barcode = barcode_obj[0]['barcode']
+                                    move_line_list.append({
+                                        
+                                        "orderLineId": purchase_line,
+                                        "moveId": move_ids,
+                                        "moveLineId": move_line_ids,
+                                        "productId": product_ids,
+                                        "productBarcode": barcode,
+                                        "productName": product_name,
+                                        "productQtyRequestPO": product_qty_request,
+                                        "productQtyReceived": qty_received,
+                                        "productQtyDemand": product_qty,
+                                        "productQtyDone": qty_done,
+                                        
+                                    })   
+                        purchase.append({
+                            'purchaseOrderVendor': vendor_name,
+                            'purchaseOrderId': purchase_ids,
+                            'purchaseOrderName': name,
+                            'purhcaseOrderState':state,
+                            'purchaseOrderDateOrder': date_order,
+                            'purchaseOrderReceiptDate': date_plan,
+                            'purchaseOrderLine': move_line_list,
+                            'purchaseOrderLocationSourceId': x['location_id'][0],
+                            'purchaseOrderLocationDestinationId': x['location_dest_id'][0],
+                            'purchaseOrderCompanyId': x['company_id'][0],
+                            "purchaseOrderTotalQtyRequest": sum(total_qty_request),
+                            "pickingId": picking_ids,
+                        })
         return purchase
         
     def internal_transfer_in(self, response,serializer=False):
