@@ -376,14 +376,13 @@ class BaseResponse(object):
             models.execute_kw(db, uid, password, 'purchase.order.line', 'write', [[order_line_ids], vals_order_line])
             
             vals_stock_move_line = {
-                "product_uom_qty":0,
                 "qty_done": qty_done,
                 "state": 'done'
             }
             #update Product uom qty 0, qty_done(request), state done
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[move_line_ids], vals_stock_move_line])
             #update stock move state done
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done",'product_uom_qty':qty_done}])
+            # models.execute_kw(db, uid, password, 'stock.move', 'write', [[move_ids], {'state': "done"}])
 
             cek_product = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id]]], {'fields': ['id']})
             
@@ -392,9 +391,13 @@ class BaseResponse(object):
                 cek_product_vendor = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['location_id','=',location_ids]]], {'fields': ['id','quantity']})
                 stock_quant_vendor_ids = cek_product_vendor[0]['id']
                 quantity_stock_vendor = cek_product_vendor[0]['quantity'] - qty_done
-                stock_quant_ids = cek_product_location[0]['id']
-                quantity_stock = cek_product_location[0]['quantity'] + qty_done
+                #issue disini
+                # stock_quant_ids = cek_product_location[0]['id']
+                #end issue
+                # quantity_stock = cek_product_location[0]['quantity'] + qty_done
                 if cek_product_location:
+                    stock_quant_ids = cek_product_location[0]['id']
+                    quantity_stock = cek_product_location[0]['quantity'] + qty_done
                     models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
                 if cek_product_vendor:
                     models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_vendor_ids], {'quantity': quantity_stock_vendor}])
