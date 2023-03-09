@@ -46,7 +46,7 @@ class BaseResponse(object):
                     common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
                     uid = common.authenticate(db, username, password, {})
                     models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-                    purchase_data  = models.execute_kw(db, uid, password, 'purchase.order', 'search_read', [[['name','=',origin]]], {'fields': []})
+                    purchase_data  = models.execute_kw(db, uid, password, 'purchase.order', 'search_read', [[['purchase_number','=',origin]]], {'fields': []})
                     if purchase_data:
                         for data in purchase_data:
                             purchase_ids = data['id']
