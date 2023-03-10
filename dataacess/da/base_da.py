@@ -84,7 +84,7 @@ class BaseDA(object):
             for x in fields:
                 fields_list.append(x)
             
-            response =models.execute_kw(db, uid, password, controllerName, 'search_read', [['|','|','|',['name','=',barcode],['origin','=',barcode],['transfer_id.name','=',barcode],['consume_id.name','=',barcode]]], {'fields': fields_list})
+            response =models.execute_kw(db, uid, password, controllerName, 'search_read', [['|','|','|',['name','=',barcode],['origin','=',barcode],['transfer_id.name','=',barcode],['consume_id.consume_number','=',barcode]]], {'fields': fields_list})
             if not response:
                 
                 response = []
