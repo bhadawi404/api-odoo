@@ -38,7 +38,6 @@ class BaseResponse(object):
         location_destination = serializer.data['location_name']
         #end 
         purchase = []
-        print("masuk response")
         for x in response:
             if not x['consume_id'] and not x['transfer_id']:
                 if x['state'] == 'assigned':
@@ -115,58 +114,59 @@ class BaseResponse(object):
         # print(response)
        
         for x in response:
-            id =x['id']
-            type_id = x['picking_type_id'][0]
-            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-            uid = common.authenticate(db, username, password, {})
-            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-            cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
-            print(cek_inter)
-            print(x['state'])
-            print(id)
-            print(type_id)
-            if cek_inter and x['state']=='assigned':
-                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
-                linesIT=[]
-                for data in stock_move:
-                    move_ids = data['id']
-                    move_line_ids = None
-                    product_ids = data['product_id'][0]
-                    product_qty = data['product_qty']
-                    product_name = data['product_id'][1]
-                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
-                    qty_done = 0
-                    for rc in received:
-                        qty_done = rc['qty_done']
-                        move_line_ids = rc['id']
-                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
-                    barcode = barcode_obj[0]['barcode']
-                    linesIT.append(
-                        {
-                            "moveId": move_ids,
-                            "moveLineId": move_line_ids,
-                            "productId": product_ids,
-                            "productBarcode": barcode,
-                            "productName": product_name,
-                            "productQtyReceived": product_qty,
-                            "productQtyDemand": product_qty,
-                            "productQtyDone": qty_done,
-                        })
-                internal.append({
-                    'PickingId' : x['id'],
-                    'NoPickingType': x['name'],
-                    'SourceLocation': x['location_id'][1],
-                    'DestinationLocation':x['location_dest_id'][1],
-                    'ScheduleDate': x['scheduled_date'],
-                    # 'MRID': x['mr_id'],
-                    # 'AssetId': x['asset_id'],
-                    'MRID':"",
-                    'AssetId': "",
-                    'LocationSourceId': x['location_id'][0],
-                    'LocationDestinationId': x['location_dest_id'][0],
-                    'CompanyId': x['company_id'][0],
-                    'InternalTransferLine': linesIT,
-                })
+            if x['transfer_id']:
+                id =x['id']
+                type_id = x['picking_type_id'][0]
+                common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+                uid = common.authenticate(db, username, password, {})
+                models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+                cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
+                print(cek_inter)
+                print(x['state'])
+                print(id)
+                print(type_id)
+                if cek_inter and x['state']=='assigned':
+                    stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                    linesIT=[]
+                    for data in stock_move:
+                        move_ids = data['id']
+                        move_line_ids = None
+                        product_ids = data['product_id'][0]
+                        product_qty = data['product_qty']
+                        product_name = data['product_id'][1]
+                        received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
+                        qty_done = 0
+                        for rc in received:
+                            qty_done = rc['qty_done']
+                            move_line_ids = rc['id']
+                        barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                        barcode = barcode_obj[0]['barcode']
+                        linesIT.append(
+                            {
+                                "moveId": move_ids,
+                                "moveLineId": move_line_ids,
+                                "productId": product_ids,
+                                "productBarcode": barcode,
+                                "productName": product_name,
+                                "productQtyReceived": product_qty,
+                                "productQtyDemand": product_qty,
+                                "productQtyDone": qty_done,
+                            })
+                    internal.append({
+                        'PickingId' : x['id'],
+                        'NoPickingType': x['name'],
+                        'SourceLocation': x['location_id'][1],
+                        'DestinationLocation':x['location_dest_id'][1],
+                        'ScheduleDate': x['scheduled_date'],
+                        # 'MRID': x['mr_id'],
+                        # 'AssetId': x['asset_id'],
+                        'MRID':"",
+                        'AssetId': "",
+                        'LocationSourceId': x['location_id'][0],
+                        'LocationDestinationId': x['location_dest_id'][0],
+                        'CompanyId': x['company_id'][0],
+                        'InternalTransferLine': linesIT,
+                    })
         return internal
     
     def internal_transfer_out(self, response,serializer=False):
@@ -177,59 +177,60 @@ class BaseResponse(object):
         internal = []
         
         for x in response:
-            id =x['id']
-            type_id = x['picking_type_id'][0]
-            
-            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-            uid = common.authenticate(db, username, password, {})
-            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-            cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
-            if cek_inter and x['state']=='draft':
-                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
-                linesIT=[]
+            if x['transfer_id']:
+                id =x['id']
+                type_id = x['picking_type_id'][0]
                 
-                for data in stock_move:
-                    move_ids = data['id']
-                    move_line_ids = None
-                    product_ids = data['product_id'][0]
-                    product_qty = data['product_qty']
-                    product_name = data['product_id'][1]
-                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
-                    qty_done = 0
-                    print(stock_move)
-                    for rc in received:
-                        qty_done = rc['qty_done']
-                        move_line_ids = rc['id']
-                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
-                    barcode = barcode_obj[0]['barcode']
-                    print("BISA")
-                    print(barcode_obj)
-                    linesIT.append(
-                        {
-                            "moveId": move_ids,
-                            "moveLineId": move_line_ids,
-                            "productId": product_ids,
-                            "productBarcode": barcode,
-                            "productName": product_name,
-                            "productQtyReceived": product_qty,
-                            "productQtyDemand": product_qty,
-                            "productQtyDone": qty_done,
-                        })
-                internal.append({
-                    'PickingId' : x['id'],
-                    'NoPickingType': x['name'],
-                    'SourceLocation': x['location_id'][1],
-                    'DestinationLocation':x['location_dest_id'][1],
-                    'ScheduleDate': x['scheduled_date'],
-                    'LocationSourceId': x['location_id'][0],
-                    'LocationDestinationId': x['location_dest_id'][0],
-                    'CompanyId': x['company_id'][0],
-                    # 'MRID': x['mr_id'],
-                    # 'AssetId': x['asset_id'],
-                    'MRID':"",
-                    'AssetId': "",
-                    'InternalTransferLine': linesIT,
-                })
+                common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+                uid = common.authenticate(db, username, password, {})
+                models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+                cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
+                if cek_inter and x['state']=='draft':
+                    stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                    linesIT=[]
+                    
+                    for data in stock_move:
+                        move_ids = data['id']
+                        move_line_ids = None
+                        product_ids = data['product_id'][0]
+                        product_qty = data['product_qty']
+                        product_name = data['product_id'][1]
+                        received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
+                        qty_done = 0
+                        print(stock_move)
+                        for rc in received:
+                            qty_done = rc['qty_done']
+                            move_line_ids = rc['id']
+                        barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                        barcode = barcode_obj[0]['barcode']
+                        print("BISA")
+                        print(barcode_obj)
+                        linesIT.append(
+                            {
+                                "moveId": move_ids,
+                                "moveLineId": move_line_ids,
+                                "productId": product_ids,
+                                "productBarcode": barcode,
+                                "productName": product_name,
+                                "productQtyReceived": product_qty,
+                                "productQtyDemand": product_qty,
+                                "productQtyDone": qty_done,
+                            })
+                    internal.append({
+                        'PickingId' : x['id'],
+                        'NoPickingType': x['name'],
+                        'SourceLocation': x['location_id'][1],
+                        'DestinationLocation':x['location_dest_id'][1],
+                        'ScheduleDate': x['scheduled_date'],
+                        'LocationSourceId': x['location_id'][0],
+                        'LocationDestinationId': x['location_dest_id'][0],
+                        'CompanyId': x['company_id'][0],
+                        # 'MRID': x['mr_id'],
+                        # 'AssetId': x['asset_id'],
+                        'MRID':"",
+                        'AssetId': "",
+                        'InternalTransferLine': linesIT,
+                    })
         
         return internal
 
