@@ -50,6 +50,7 @@ class BaseResponse(object):
                         for data in purchase_data:
                             purchase_ids = data['id']
                             name = data['name']
+                            purchase_number = data['purchase_number']
                             state = data['state']
                             date_order = data['date_order']
                             date_plan = data['date_planned']
@@ -62,16 +63,18 @@ class BaseResponse(object):
                             for move in move_data:
                                 move_ids = move['id']
                                 purchase_line = move['purchase_line_id'][0]
-                                order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',purchase_line]]], {'fields': ['qty_received','product_qty']})
+                                order_line = models.execute_kw(db, uid, password, 'purchase.order.line', 'search_read', [[['id','=',purchase_line]]], {'fields': ['qty_received','product_qty','brand']})
                                 qty_received = order_line[0]['qty_received']
+                                brand = order_line[0]['brand']
                                 product_qty_request = order_line[0]['product_qty']
-                                move_line_data = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',move['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
+                                move_line_data = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',move['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id','product_uom_id']})
                                 total_qty_request.append(product_qty_request)
                                 for move_line in move_line_data:
                                     move_line_ids = move_line['id']
                                     product_ids = move_line['product_id'][0]
                                     product_qty = move_line['product_qty']
                                     product_name = move_line['product_id'][1]
+                                    product_uom = move_line['product_uom_id'][1]
                                     qty_done = move_line['qty_done']
                                     barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
                                     barcode = barcode_obj[0]['barcode']
@@ -83,6 +86,8 @@ class BaseResponse(object):
                                         "productId": product_ids,
                                         "productBarcode": barcode,
                                         "productName": product_name,
+                                        "productBrand": brand,
+                                        "productUom": product_uom,
                                         "productQtyRequestPO": product_qty_request,
                                         "productQtyReceived": qty_received,
                                         "productQtyDemand": product_qty,
@@ -92,7 +97,7 @@ class BaseResponse(object):
                         purchase.append({
                             'purchaseOrderVendor': vendor_name,
                             'purchaseOrderId': purchase_ids,
-                            'purchaseOrderName': name,
+                            'purchaseOrderName': purchase_number,
                             'purhcaseOrderState':state,
                             'purchaseOrderDateOrder': date_order,
                             'purchaseOrderReceiptDate': date_plan,
