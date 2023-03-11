@@ -248,58 +248,68 @@ class BaseResponse(object):
         
         # print(response)
         for x in response:
-            id =x['id']
-            type_id = x['picking_type_id'][0]
-            
-            common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
-            uid = common.authenticate(db, username, password, {})
-            models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-            consume_cek = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Consume']]], {'fields': ['name']})
-            
-            # if len(consume_cek) > 0 & x['state']=='assigned':
-            if len(consume_cek) > 0:
-               
-                stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
-                linesConsume=[]
-                print("bisa")
-                for data in stock_move:
-                    move_ids = data['id']
-                    move_line_ids = data['id']
-                    product_ids = data['product_id'][0]
-                    product_qty = data['product_qty']
-                    product_name = data['product_id'][1]
-                    qty_done = 0
-                    received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
-                    qty_received = 0
-                    for rc in received:
-                        qty_received = rc['qty_done']
-                    barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
-                    barcode = barcode_obj[0]['barcode']
-                    linesConsume.append(
-                        {
-                            "moveId": move_ids,
-                            "moveLineId": move_line_ids,
-                            "productId": product_ids,
-                            "productBarcode": barcode,
-                            "productName": product_name,
-                            "productQtyReceived": qty_received,
-                            "productQtyDemand": product_qty,
-                            "productQtyDone": qty_done,
+            if x['consume_id']:
+                if x['state'] == 'assigned':
+                    id =x['id']
+                    type_id = x['picking_type_id'][0]
+                    material_request_id = False
+                    asset_ids = False
+                    mr_ids = x['amtiss_material_request_id']
+                    asset = x['asset_id']
+                    if mr_ids:
+                        material_request_id = mr_ids[1]
+                    if asset:
+                        asset_ids = asset[1]
+                    
+                    common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+                    uid = common.authenticate(db, username, password, {})
+                    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+                    consume_cek = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['name','=','Consume']]], {'fields': ['name']})
+                    
+                    # if len(consume_cek) > 0 & x['state']=='assigned':
+                    if len(consume_cek) > 0:
+                    
+                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
+                        linesConsume=[]
+                        print("bisa")
+                        for data in stock_move:
+                            move_ids = data['id']
+                            move_line_ids = data['id']
+                            product_ids = data['product_id'][0]
+                            product_qty = data['product_qty']
+                            product_name = data['product_id'][1]
+                            product_uom = data['product_uom'][1]
+                            qty_done = 0
+                            received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
+                            qty_received = 0
+                            for rc in received:
+                                qty_received = rc['qty_done']
+                            barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                            barcode = barcode_obj[0]['barcode']
+                            linesConsume.append(
+                                {
+                                    "moveId": move_ids,
+                                    "moveLineId": move_line_ids,
+                                    "productId": product_ids,
+                                    "productBarcode": barcode,
+                                    "productUom": product_uom,
+                                    "productName": product_name,
+                                    "productQtyReceived": qty_received,
+                                    "productQtyDemand": product_qty,
+                                    "productQtyDone": qty_done,
+                                })
+                        consume.append({
+                            'NoPickingType': x['name'],
+                            'SourceLocation': x['location_id'][1],
+                            'DestinationLocation':x['location_dest_id'][1],
+                            'ScheduleDate': x['scheduled_date'],
+                            'LocationSourceId': x['location_id'][0],
+                            'LocationDestinationId': x['location_dest_id'][0],
+                            'CompanyId': x['company_id'][0],
+                            'MRID': material_request_id or False,
+                            'AssetId': asset_ids or False,
+                            'ConsumeLine': linesConsume,
                         })
-                consume.append({
-                    'NoPickingType': x['name'],
-                    'SourceLocation': x['location_id'][1],
-                    'DestinationLocation':x['location_dest_id'][1],
-                    'ScheduleDate': x['scheduled_date'],
-                    'LocationSourceId': x['location_id'][0],
-                    'LocationDestinationId': x['location_dest_id'][0],
-                    'CompanyId': x['company_id'][0],
-                    # 'MRID': x['mr_id'],
-                    # 'AssetId': x['asset_id'],
-                    'MRID':"",
-                    'AssetId': "",
-                    'ConsumeLine': linesConsume,
-                })
         return consume
     
     def return_product(self, response,serializer=False):
