@@ -682,66 +682,66 @@ class BaseResponse(object):
         
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         product = request.data['product']
-        print("bisa dong")
-        picking_ids = request.data['pickingId']
-        
+        picking_ids = request.data['PickingId']
         location_ids = request.data['LocationSourceId']
-        
         destination_ids = request.data['LocationDestinationId']
         company_ids = request.data['CompanyId']
         TransferId = request.data['TransferId']
-      
         for pd in product:
-            print(pd)
-        #     moveids = pd['moveId']
-        #     movelineids = pd['moveLineId']
-        #     product_id = pd['productId']
-        #     qty_done = pd['productQtyDone']
-        #     product_qty = pd['productQtyReceived']
-        #     vals_stock_move = {
-        #         "reservation_date":now,
-        #         "state": 'done'
-        #     } 
-        #     models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], vals_stock_move])
+            moveids = pd['moveId']
+            movelineids = pd['moveLineId']
+            product_id = pd['productId']
+            qty_done = pd['productQtyDone']
+            product_qty = pd['productQtyReceived']
             
-        #     vals_stock_move_line = {
-        #         "state": 'done'
-        #         }
-        #     models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[pd['moveLineId']], vals_stock_move_line])
-        #     cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+            cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+            if cek_product_dest:
+                stock_quant_ids = cek_product_dest[0]['id']
+                quantity_stock = cek_product_dest[0]['quantity'] + qty_done
+                models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
+            else :
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                    {
+                                    'product_id': product_id,
+                                    'company_id' : company_ids,
+                                    'location_id' : destination_ids,
+                                    'in_date'    : now,
+                                    'quantity'   : qty_done,
+                                    }
+                                    ])
+           
             
-        #     if cek_product_dest:
-        #         stock_quant_ids = cek_product_dest[0]['id']
-        #         quantity_stock = cek_product_dest[0]['quantity'] + qty_done
-        #         models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
-        #     else :
-        #         models.execute_kw(db, uid, password, 'stock.quant', 'create', [
-        #                             {
-        #                             'product_id': product_id,
-        #                             'company_id' : company_ids,
-        #                             'location_id' : destination_ids,
-        #                             'in_date'    : now,
-        #                             'quantity'   : qty_done,
-        #                             }
-        #                             ])
-            
-        #     cek_product_lock = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',location_ids]]], {'fields': ['id','quantity','reserved_quantity']})
-        #     if cek_product_lock:
-        #         stock_quant_lock_ids = cek_product_lock[0]['id']
-        #         quantity_stock_lock = cek_product_lock[0]['quantity'] - qty_done
-        #         models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_lock_ids], {'quantity': quantity_stock_lock,'reserved_quantity': cek_product_lock[0]['reserved_quantity']-qty_done}])
-        #     else:
-        #         models.execute_kw(db, uid, password, 'stock.quant', 'create', [
-        #                     {
-        #                     'product_id': product_id,
-        #                     'company_id' : company_ids,
-        #                     'location_id' : location_ids,
-        #                     'in_date'    : now,
-        #                     'quantity'   : qty_done-(qty_done*2),
-        #                     }
-        #                     ]) 
-        # models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "transfered"}]) 
-        # models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}]) 
+            cek_product_lock = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',location_ids]]], {'fields': ['id','quantity','reserved_quantity']})
+            if cek_product_lock:
+                stock_quant_lock_ids = cek_product_lock[0]['id']
+                quantity_stock_lock = cek_product_lock[0]['quantity'] - qty_done
+                models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_lock_ids], {'quantity': quantity_stock_lock,'reserved_quantity': cek_product_lock[0]['reserved_quantity']-qty_done}])
+            else:
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                            {
+                            'product_id': product_id,
+                            'company_id' : company_ids,
+                            'location_id' : location_ids,
+                            'in_date'    : now,
+                            'quantity'   : qty_done-(qty_done*2),
+                            }
+                            ]) 
+            print("MASUK DONG 1")
+            vals_stock_move_line = {
+                "product_uom_qty":0,
+                "qty_done": qty_done,
+                "state": 'done'
+            }
+            print("MASUK DONG 2")
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
+            print("MASUK DONG 3")
+            models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[movelineids], vals_stock_move_line])
+            print(moveids)
+            print("MASUK DONG 4")
+        models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}]) 
+        print("MASUK DONG 5")
+        models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "transfered"}]) 
+        print("MASUK DONG 6")
         return True
     
     def validate_internal_transfer_in(self, request, serializer=False):
