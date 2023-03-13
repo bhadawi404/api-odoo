@@ -120,17 +120,23 @@ class BaseResponse(object):
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
         # print(response)
-        
         for x in response:
             if x['transfer_id']:
                 transfer_id = x['transfer_id'][0]
-                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state']})
+                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state','material_req','description']})
                 if cek_state_transfer[0]['state'] in ('transfered','partially_received'):
+                    material_req = ''
+                    if cek_state_transfer[0]['material_req']!=False:
+                        material_req = cek_state_transfer[0]['material_req'][1]
+                    
+                    description = ''
+                    if cek_state_transfer[0]['description']!=False:
+                        description = cek_state_transfer[0]['description']
                     id =x['id']
                     type_id = x['picking_type_id'][0]
                     cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
                     if cek_inter and x['state']=='assigned':
-                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
                         linesIT=[]
                         for data in stock_move:
                             move_ids = data['id']
@@ -138,6 +144,7 @@ class BaseResponse(object):
                             product_ids = data['product_id'][0]
                             product_qty = data['product_qty']
                             product_name = data['product_id'][1]
+                            product_uom = data['product_uom'][1]
                             received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
                             qty_done = 0
                             for rc in received:
@@ -152,6 +159,7 @@ class BaseResponse(object):
                                     "productId": product_ids,
                                     "productBarcode": barcode,
                                     "productName": product_name,
+                                    "productUom": product_uom,
                                     "productQtyReceived": product_qty,
                                     "productQtyDemand": product_qty,
                                     "productQtyDone": qty_done,
@@ -165,7 +173,8 @@ class BaseResponse(object):
                             'ScheduleDate': x['scheduled_date'],
                             # 'MRID': x['mr_id'],
                             # 'AssetId': x['asset_id'],
-                            'MRID':"",
+                            'MRID': material_req,
+                            'Description': description,
                             'AssetId': "",
                             'LocationSourceId': x['location_id'][0],
                             'LocationDestinationId': x['location_dest_id'][0],
@@ -187,13 +196,22 @@ class BaseResponse(object):
         for x in response:
             if x['transfer_id']:
                 transfer_id = x['transfer_id'][0]
-                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state']})
+                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state','material_req','description']})
                 if cek_state_transfer[0]['state'] in ('approved','partially_transfered'):
+                    
+                    material_req = ''
+                    if cek_state_transfer[0]['material_req']!=False:
+                        material_req = cek_state_transfer[0]['material_req'][1]
+                    
+                    description = ''
+                    if cek_state_transfer[0]['description']!=False:
+                        description = cek_state_transfer[0]['description']
+
                     id =x['id']
                     type_id = x['picking_type_id'][0]
                     cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
                     if cek_inter and x['state']=='assigned':
-                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id']})
+                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
                         linesIT=[]
                         for data in stock_move:
                             move_ids = data['id']
@@ -201,6 +219,7 @@ class BaseResponse(object):
                             product_ids = data['product_id'][0]
                             product_qty = data['product_qty']
                             product_name = data['product_id'][1]
+                            product_uom = data['product_uom'][1]
                             received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
                             qty_done = 0
                             print(stock_move)
@@ -216,6 +235,7 @@ class BaseResponse(object):
                                     "productId": product_ids,
                                     "productBarcode": barcode,
                                     "productName": product_name,
+                                    "productUom": product_uom,
                                     "productQtyReceived": product_qty,
                                     "productQtyDemand": product_qty,
                                     "productQtyDone": qty_done,
@@ -232,7 +252,8 @@ class BaseResponse(object):
                             'CompanyId': x['company_id'][0],
                             # 'MRID': x['mr_id'],
                             # 'AssetId': x['asset_id'],
-                            'MRID':"",
+                            'MRID': material_req,
+                            'Description': description,
                             'AssetId': "",
                             'InternalTransferLine': linesIT,
                         })
@@ -733,15 +754,15 @@ class BaseResponse(object):
                 "state": 'done'
             }
             print("MASUK DONG 2")
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
-            print("MASUK DONG 3")
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[movelineids], vals_stock_move_line])
+            print("MASUK DONG 3")
             print(moveids)
+            models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
             print("MASUK DONG 4")
-        models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}]) 
+        models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
         print("MASUK DONG 5")
         models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "transfered"}]) 
-        print("MASUK DONG 6")
+        print("MASUK DONG ")
         return True
     
     def validate_internal_transfer_in(self, request, serializer=False):
