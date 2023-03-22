@@ -312,7 +312,7 @@ class BaseResponse(object):
                                 {
                                     "moveId": move_ids,
                                     "moveLineId": move_line_ids,
-                                    "consumeLine": consume_line,
+                                    "consumeLineId": consume_line,
                                     "productId": product_ids,
                                     "productBarcode": barcode,
                                     "productUom": product_uom,
