@@ -338,8 +338,8 @@ class BaseResponse(object):
                             'LocationSourceId': x['location_id'][0],
                             'LocationDestinationId': x['location_dest_id'][0],
                             'CompanyId': x['company_id'][0],
-                            'MRID': material_request_id or False,
-                            'AssetId': asset_ids or False,
+                            'MRID': material_request_id or '',
+                            'AssetId': asset_ids or '',
                             'ConsumeLine': linesConsume,
                         })
         return consume
