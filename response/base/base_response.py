@@ -290,7 +290,7 @@ class BaseResponse(object):
                     # if len(consume_cek) > 0 & x['state']=='assigned':
                     if len(consume_cek) > 0:
                     
-                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
+                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom','consume_line_id']})
                         linesConsume=[]
                         print("bisa")
                         for data in stock_move:
@@ -300,6 +300,7 @@ class BaseResponse(object):
                             product_qty = data['product_qty']
                             product_name = data['product_id'][1]
                             product_uom = data['product_uom'][1]
+                            consume_line = data['consume_line_id'][0]
                             qty_done = 0
                             received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty','picking_id']})
                             qty_received = 0
@@ -311,6 +312,7 @@ class BaseResponse(object):
                                 {
                                     "moveId": move_ids,
                                     "moveLineId": move_line_ids,
+                                    "consumeLine": consume_line,
                                     "productId": product_ids,
                                     "productBarcode": barcode,
                                     "productUom": product_uom,
