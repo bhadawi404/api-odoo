@@ -291,10 +291,11 @@ class BaseResponse(object):
                     common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
                     uid = common.authenticate(db, username, password, {})
                     models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-                    consume_data = models.execute_kw(db, uid, password, 'amtiss.consume', 'search_read', [[['id','=',consume_ids]]], {'fields': ['report_date','consume_number']})
+                    consume_data = models.execute_kw(db, uid, password, 'amtiss.consume', 'search_read', [[['id','=',consume_ids]]], {'fields': ['report_date','consume_number','source_location_id']})
                     # if len(consume_cek) > 0 & x['state']=='assigned':
                     report_date = consume_data[0]['report_date']
                     consume_name = consume_data[0]['consume_number']
+                    source_location = consume_data[0]['source_location_id'][1]
                     if len(consume_cek) > 0:
                     
                         stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom','consume_line_id']})
@@ -332,7 +333,7 @@ class BaseResponse(object):
                             'consumeNumber': consume_name,
                             'reportDate': report_date,
                             'pickingId': x['id'],
-                            'SourceLocation': x['location_id'][1],
+                            'SourceLocation': source_location,
                             'DestinationLocation':x['location_dest_id'][1],
                             'ScheduleDate': x['scheduled_date'],
                             'LocationSourceId': x['location_id'][0],
