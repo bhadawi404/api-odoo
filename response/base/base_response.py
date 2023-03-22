@@ -322,7 +322,7 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         consume.append({
-                            'NoPickingType': x['name'],
+                            'pickingId': x['id'],
                             'SourceLocation': x['location_id'][1],
                             'DestinationLocation':x['location_dest_id'][1],
                             'ScheduleDate': x['scheduled_date'],
