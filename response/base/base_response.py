@@ -754,8 +754,8 @@ class BaseResponse(object):
             print(movelineids)
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[movelineids], vals_stock_move_line])
             print("MASUK DONG 3")
-            print(moveids)
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
+            # print(moveids)
+            # models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
             print("MASUK DONG 4")
 
             cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
