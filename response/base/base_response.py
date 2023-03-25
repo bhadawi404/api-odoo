@@ -213,6 +213,7 @@ class BaseResponse(object):
                     if cek_inter and x['state']=='assigned':
                         stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
                         linesIT=[]
+                        all_qty = 0
                         for data in stock_move:
                             move_ids = data['id']
                             move_line_ids = None
@@ -222,9 +223,9 @@ class BaseResponse(object):
                             product_uom = data['product_uom'][1]
                             received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
                             qty_done = 0
-                            print(stock_move)
                             for rc in received:
                                 qty_done = rc['qty_done']
+                                all_qty = all_qty+ (rc['product_qty']-qty_done)
                                 move_line_ids = rc['id']
                             barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
                             barcode = barcode_obj[0]['barcode']
@@ -257,6 +258,8 @@ class BaseResponse(object):
                             'Description': description,
                             'AssetId': "",
                             'InternalTransferLine': linesIT,
+                            'allQtyRequest':all_qty,
+                            'allQtyReceive':0,
                         })
         
         return internal
@@ -338,6 +341,7 @@ class BaseResponse(object):
                             'MRID': material_request_id or '-',
                             'AssetId': asset_ids or '-',
                             'ConsumeLine': consume_line_list,
+                            
                         })
         return consume
     
@@ -798,7 +802,7 @@ class BaseResponse(object):
                             'quantity'   : qty_done-(qty_done*2),
                             }
                             ]) 
-           
+
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
         print("MASUK DONG 5")
         models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "transfered"}]) 
