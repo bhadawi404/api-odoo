@@ -1206,7 +1206,11 @@ class BaseResponse(object):
                         move_id_new = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
 
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
-        
+        if picking_new_id:
+            models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "partially_received"}]) 
+        else:
+            models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "received"}]) 
+        return True
         return True  
 
     def validate_consume(self, request, serializer=False):
