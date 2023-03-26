@@ -363,7 +363,7 @@ class BaseResponse(object):
         for x in response:
             if x['return_id']:
                 return_id = x['return_id'][0]
-                cek_state_return = models.execute_kw(db, uid, password, 'amtiss.return.requisition', 'search_read', [[['id','=',return_id]]], {'fields': ['consume_number','work_order','state']})
+                cek_state_return = models.execute_kw(db, uid, password, 'amtiss.return.requisition', 'search_read', [[['id','=',return_id]]], {'fields': ['consume_number','work_order','state','return_date','mr_id']})
                 
                 if cek_state_return[0]['state'] == 'approved' :
                     consume_number = ''
@@ -373,7 +373,12 @@ class BaseResponse(object):
                     work_order = ''
                     if cek_state_return[0]['work_order']!=False:
                         work_order = cek_state_return[0]['work_order']
-                   
+                        
+                    mr_id = ''
+                    if cek_state_return[0]['mr_id']!=False:
+                        mr_id = cek_state_return[0]['mr_id'][1]
+                        
+                    return_date = cek_state_return[0]['return_date']
                     id =x['id']
                     type_id = x['picking_type_id'][0]
                     print(type_id)
@@ -410,6 +415,8 @@ class BaseResponse(object):
                                 })
                         return_product.append({
                             'ReturnId': x['return_id'][0],
+                            'ReturnDate': return_date,
+                            'MRID': mr_id,
                             'NoPickingType': x['name'],
                             'SourceLocation': x['location_id'][1],
                             'DestinationLocation':x['location_dest_id'][1],
