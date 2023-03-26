@@ -333,7 +333,6 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         consume.append({
-                            'pickingId': x['id'][0],
                             'consumeId': consume_ids,
                             'consumeNumber': consume_name,
                             'reportDate': report_date,
@@ -417,6 +416,7 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         return_product.append({
+                            'pickingId': x['id'][0],
                             'ReturnId': x['return_id'][0],
                             'ReturnNumber': return_number,
                             'ReturnDate': return_date,
