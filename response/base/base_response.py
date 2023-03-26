@@ -1471,7 +1471,7 @@ class BaseResponse(object):
         date_now = datetime.now()
         
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
-        product = request.data['product']
+        product = request.data['ReturnLine']
         picking_ids = request.data['PickingId']
         location_ids = request.data['LocationSourceId']
         destination_ids = request.data['LocationDestinationId']
