@@ -168,6 +168,7 @@ class BaseResponse(object):
                                 })
                         internal.append({
                             'TransferId': x['transfer_id'][0],
+                            'TransferNumber': x['transfer_id'][1],
                             'PickingId' : x['id'],
                             'NoPickingType': x['name'],
                             'SourceLocation': x['location_id'][1],
