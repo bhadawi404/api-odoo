@@ -1460,7 +1460,7 @@ class BaseResponse(object):
             
         return True        
     
-    def validate_return(self, response, request, serializer=False):
+    def validate_return(self,  request, serializer=False):
         url = serializer.data['url']
         db = serializer.data['db']
         username = serializer.data['email']
@@ -1472,7 +1472,7 @@ class BaseResponse(object):
         
         now = date_now.strftime('%Y-%m-%d %H:%M:%S')
         product = request.data['ReturnLine']
-        picking_ids = request.data['PickingId']
+        picking_ids = request.data['pickingId']
         location_ids = request.data['LocationSourceId']
         destination_ids = request.data['LocationDestinationId']
         company_ids = request.data['CompanyId']
