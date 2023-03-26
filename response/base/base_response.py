@@ -417,7 +417,7 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         return_product.append({
-                            'pickingId': id,
+                            # 'pickingId': id,
                             'ReturnId': x['return_id'][0],
                             'ReturnNumber': return_number,
                             'ReturnDate': return_date,
