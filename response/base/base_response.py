@@ -1482,22 +1482,20 @@ class BaseResponse(object):
             movelineids = pd['moveLineId']
             product_id = pd['productId']
             qty_done = pd['productQtyDone']
-            product_qty = pd['productQtyReceived']
+            # product_qty = pd['productQtyReceived']
 
-            print("MASUK DONG 1")
+           
             vals_stock_move_line = {
                 "product_uom_qty":0,
                 "qty_done": qty_done,
                 "state": 'done'
             }
            
-            print("MASUK DONG 2")
-            print(movelineids)
+            
             models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[movelineids], vals_stock_move_line])
-            print("MASUK DONG 3")
-            print(moveids)
-            models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
-            print("MASUK DONG 4")
+            
+            # models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
+            # print("MASUK DONG 4")
 
             cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
             if cek_product_dest:
@@ -1533,9 +1531,9 @@ class BaseResponse(object):
                             ]) 
            
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
-        print("MASUK DONG 5")
+        
         models.execute_kw(db, uid, password, 'amtiss.return.requisition', 'write', [[ReturnId], {'state': "done"}]) 
-        print("MASUK DONG ")
+        
         return True        
                 
                 
