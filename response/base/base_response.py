@@ -333,6 +333,7 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         consume.append({
+                            'pickingId': x['id'][0],
                             'consumeId': consume_ids,
                             'consumeNumber': consume_name,
                             'reportDate': report_date,
