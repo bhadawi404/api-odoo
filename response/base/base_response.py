@@ -1368,7 +1368,7 @@ class BaseResponse(object):
                     for mv in move_old:
                         name = mv['name']
                         product_id = mv['product_id'][0]
-                        product_uom_qty = qty_done_request
+                        product_uom_qty = mv['product_qty'] - qty_done_request
                         product_uom = mv['product_uom'][0]
                         location_id = mv['location_id'][0]
                         location_dest_id = mv['location_dest_id'][0]
@@ -1408,7 +1408,7 @@ class BaseResponse(object):
                     for mv in move_old:
                         name = mv['name']
                         product_id = mv['product_id'][0]
-                        product_uom_qty = qty_done_request
+                        product_uom_qty = mv['product_qty'] - qty_done_request
                         product_uom = mv['product_uom'][0]
                         location_id = mv['location_id'][0]
                         location_dest_id = mv['location_dest_id'][0]
