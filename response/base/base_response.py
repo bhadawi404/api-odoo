@@ -1211,7 +1211,7 @@ class BaseResponse(object):
         else:
             models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "received"}]) 
         return True
-        return True  
+        
 
     def validate_consume(self, request, serializer=False):
         url = serializer.data['url']
