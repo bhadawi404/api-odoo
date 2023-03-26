@@ -392,7 +392,6 @@ class BaseResponse(object):
                         for data in stock_move:
                             move_ids = data['id']
                             move_line_ids = None
-                            picking_id = data['picking_id'][0]
                             product_ids = data['product_id'][0]
                             product_qty = data['product_qty']
                             product_name = data['product_id'][1]
@@ -417,7 +416,7 @@ class BaseResponse(object):
                                     "productQtyDone": qty_done,
                                 })
                         return_product.append({
-                            # 'pickingId': id,
+                            'pickingId': id,
                             'ReturnId': x['return_id'][0],
                             'ReturnNumber': return_number,
                             'ReturnDate': return_date,
