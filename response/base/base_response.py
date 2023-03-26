@@ -363,7 +363,7 @@ class BaseResponse(object):
         for x in response:
             if x['return_id']:
                 return_id = x['return_id'][0]
-                cek_state_return = models.execute_kw(db, uid, password, 'amtiss.return.requisition', 'search_read', [[['id','=',return_id]]], {'fields': ['consume_number','work_order','state','return_date','mr_id']})
+                cek_state_return = models.execute_kw(db, uid, password, 'amtiss.return.requisition', 'search_read', [[['id','=',return_id]]], {'fields': ['consume_number','work_order','state','return_date','mr_id','name']})
                 
                 if cek_state_return[0]['state'] == 'approved' :
                     consume_number = ''
@@ -379,6 +379,7 @@ class BaseResponse(object):
                         mr_id = cek_state_return[0]['mr_id'][1]
                         
                     return_date = cek_state_return[0]['return_date']
+                    return_number = cek_state_return[0]['name']
                     id =x['id']
                     type_id = x['picking_type_id'][0]
                     print(type_id)
@@ -415,6 +416,7 @@ class BaseResponse(object):
                                 })
                         return_product.append({
                             'ReturnId': x['return_id'][0],
+                            'ReturnNumber': return_number,
                             'ReturnDate': return_date,
                             'MRID': mr_id,
                             'NoPickingType': x['name'],
