@@ -109,7 +109,86 @@ class BaseResponse(object):
                             "pickingId": picking_ids,
                         })
         return purchase
-        
+
+    def internal_transfer(self, response,serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
+        internal = []
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        # print(response)
+        for x in response:
+            if x['transfer_id']:
+                all_qty = 0
+                transfer_id = x['transfer_id'][0]
+                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state','material_req','description']})
+                if cek_state_transfer[0]['state'] in ('transfered','partially_received','approved','partially_transfered'):
+                    material_req = ''
+                    if cek_state_transfer[0]['material_req']!=False:
+                        material_req = cek_state_transfer[0]['material_req'][1]
+                    
+                    description = ''
+                    if cek_state_transfer[0]['description']!=False:
+                        description = cek_state_transfer[0]['description']
+                    id =x['id']
+                    type_id = x['picking_type_id'][0]
+                    cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
+                    if cek_inter and x['state']=='assigned':
+                        stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
+                        linesIT=[]
+                        for data in stock_move:
+                            move_ids = data['id']
+                            move_line_ids = None
+                            product_ids = data['product_id'][0]
+                            product_qty = data['product_qty']
+                            product_name = data['product_id'][1]
+                            product_uom = data['product_uom'][1]
+                            received  = models.execute_kw(db, uid, password, 'stock.move.line', 'search_read', [[['move_id','=',data['id']]]], {'fields': ['product_id','qty_done','product_qty']})
+                            qty_done = 0
+                            for rc in received:
+                                qty_done = rc['qty_done']
+                                all_qty = all_qty+ (rc['product_qty']-qty_done)
+                                move_line_ids = rc['id']
+                            barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',product_ids]]], {'fields': ['barcode']})
+                            barcode = barcode_obj[0]['barcode']
+                            linesIT.append(
+                                {
+                                    "moveId": move_ids,
+                                    "moveLineId": move_line_ids,
+                                    "productId": product_ids,
+                                    "productBarcode": barcode,
+                                    "productName": product_name,
+                                    "productUom": product_uom,
+                                    "productQtyReceived": product_qty,
+                                    "productQtyDemand": product_qty,
+                                    "productQtyDone": qty_done,
+                                })
+                        internal.append({
+                            'TransferId': x['transfer_id'][0],
+                            'TransferNumber': x['transfer_id'][1],
+                            'PickingId' : x['id'],
+                            'NoPickingType': x['name'],
+                            'SourceLocation': x['location_id'][1],
+                            'DestinationLocation':x['location_dest_id'][1],
+                            'ScheduleDate': x['scheduled_date'],
+                            'state':cek_state_transfer[0]['state'],
+                            # 'MRID': x['mr_id'],
+                            # 'AssetId': x['asset_id'],
+                            'MRID': material_req,
+                            'Description': description,
+                            'AssetId': "",
+                            'LocationSourceId': x['location_id'][0],
+                            'LocationDestinationId': x['location_dest_id'][0],
+                            'CompanyId': x['company_id'][0],
+                            'InternalTransferLine': linesIT,
+                            'allQtyRequest':all_qty,
+                            'allQtyReceive':0,
+                        })
+        return internal
+
     def internal_transfer_in(self, response,serializer=False):
         url = serializer.data['url']
         db = serializer.data['db']
@@ -748,7 +827,253 @@ class BaseResponse(object):
         models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
         
         return True
+    
+    def validate_internal_transfer(self, request, serializer=False):
+        url = serializer.data['url']
+        db = serializer.data['db']
+        username = serializer.data['email']
+        password = serializer.data['key']
+        common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        uid = common.authenticate(db, username, password, {})
+        models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        date_now = datetime.now()
+        
+        now = date_now.strftime('%Y-%m-%d %H:%M:%S')
+        product = request.data['product']
+        picking_ids = request.data['PickingId']
+        location_ids = request.data['LocationSourceId']
+        destination_ids = request.data['LocationDestinationId']
+        company_ids = request.data['CompanyId']
+        TransferId = request.data['TransferId']
+        state = request.data['state']
+        picking_new_id = None
+        for pd in product:
+            moveids = pd['moveId']
+            movelineids = pd['moveLineId']
+            product_id = pd['productId']
+            qty_done = pd['productQtyDone']
+            product_qty = pd['productQtyReceived']
 
+            vals_stock_move_line = {
+                # "product_uom_qty":0,
+                "qty_done": qty_done,
+                "state": 'done'
+            }
+            models.execute_kw(db, uid, password, 'stock.move.line', 'write', [[movelineids], vals_stock_move_line])
+            # print(moveids)
+            # models.execute_kw(db, uid, password, 'stock.move', 'write', [[moveids], {'state': "done"}]) 
+    
+            cek_product_dest = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',destination_ids]]], {'fields': ['id','quantity']})
+            if cek_product_dest:
+                stock_quant_ids = cek_product_dest[0]['id']
+                quantity_stock = cek_product_dest[0]['quantity'] + qty_done
+                models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_ids], {'quantity': quantity_stock}])
+            else :
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                                    {
+                                    'product_id': product_id,
+                                    'company_id' : company_ids,
+                                    'location_id' : destination_ids,
+                                    'in_date'    : now,
+                                    'quantity'   : qty_done,
+                                    }
+                                    ])
+           
+            
+            cek_product_lock = models.execute_kw(db, uid, password, 'stock.quant', 'search_read', [[['product_id','=',product_id],['company_id','=',company_ids],['location_id','=',location_ids]]], {'fields': ['id','quantity','reserved_quantity']})
+            if cek_product_lock:
+                stock_quant_lock_ids = cek_product_lock[0]['id']
+                quantity_stock_lock = cek_product_lock[0]['quantity'] - qty_done
+                models.execute_kw(db, uid, password, 'stock.quant', 'write', [[stock_quant_lock_ids], {'quantity': quantity_stock_lock,'reserved_quantity': cek_product_lock[0]['reserved_quantity']-qty_done}])
+            else:
+                models.execute_kw(db, uid, password, 'stock.quant', 'create', [
+                            {
+                            'product_id': product_id,
+                            'company_id' : company_ids,
+                            'location_id' : location_ids,
+                            'in_date'    : now,
+                            'quantity'   : qty_done-(qty_done*2),
+                            }
+                            ])
+            
+            if qty_done < product_qty:
+                if not picking_new_id:
+                    #create stock Picking
+                    picking_old = models.execute_kw(db, uid, password, 'stock.picking', 'search_read', [[['id','=',picking_ids]]], {'fields': []}) 
+                    for x in picking_old:
+                        mr = False
+                        asset = False
+                        wo = False
+                        picking_group = x['picking_group']
+                        message_main_attachment_id = x['message_main_attachment_id']
+                        origin = x['origin']
+                        backorder_id = picking_ids
+                        move_type = x['move_type']
+                        # group_id = x['group_id'][0]
+                        priority = x['priority']
+                        scheduled_date = x['scheduled_date']
+                        date_deadline = x['date_deadline']
+                        has_deadline_issue = x['has_deadline_issue']
+                        location_id = x['location_id'][0]
+                        location_dest_id = x['location_dest_id'][0]
+                        picking_type_id = x['picking_type_id'][0]
+                        company_id = x['company_id'][0]
+                        mr_id = x['mr_id']
+                        asset_id = x['asset_id']
+                        wo_id = x['assignment_id']
+                        if mr_id:
+                            mr = mr_id[0]
+                        if asset:
+                            asset = asset_id[0]
+                        if wo_id:
+                           wo = wo_id[0]
+                        picking_group = picking_ids
+                        note = x['note']
+                        
+                        if x['picking_group']:
+                            vals_pt = {
+                                        'transfer_id': TransferId,
+                                        'message_main_attachment_id': message_main_attachment_id,
+                                        'origin': origin,
+                                        'note': note,
+                                        'backorder_id' : picking_ids,
+                                        'move_type': move_type,
+                                        'state': 'assigned',
+                                        'priority': priority,
+                                        'scheduled_date': scheduled_date,
+                                        'date_deadline': date_deadline,
+                                        'date': now,
+                                        'has_deadline_issue': has_deadline_issue,
+                                        'location_id': location_id,
+                                        'location_dest_id': location_dest_id,
+                                        'picking_type_id': picking_type_id,
+                                        'company_id': company_id,
+                                        'mr_id': mr,
+                                        'asset_id': asset,
+                                        'assignment_id': wo,
+                                        'picking_group': x['picking_group'][0],
+                                        
+                                        }
+                            print(vals_pt)
+                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [
+                                        vals_pt
+                                        ])
+                        else:
+                            vals_p = {
+                                        'transfer_id': TransferId,
+                                        'message_main_attachment_id': x['message_main_attachment_id'],
+                                        'note': note,
+                                        'backorder_id' : picking_ids,
+                                        'move_type': move_type,
+                                        'state': 'assigned',
+                                        'priority': priority,
+                                        'scheduled_date': scheduled_date,
+                                        'date_deadline': date_deadline,
+                                        'date': now,
+                                        'has_deadline_issue': has_deadline_issue,
+                                        'location_id': location_id,
+                                        'location_dest_id': location_dest_id,
+                                        'picking_type_id': picking_type_id,
+                                        'company_id': company_id,
+                                        'mr_id': mr,
+                                        'asset_id': asset,
+                                        'assignment_id': wo,
+                                        'picking_group': picking_ids,
+                                        }
+                            print(vals_p)
+                            create_picking = models.execute_kw(db, uid, password, 'stock.picking', 'create', [vals_p])
+
+                    picking_new_id =  create_picking
+                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [moveids], {'fields': ['product_qty','name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline','transfer_id']})
+                    for mv in move_old:
+                        name = mv['name']
+                        product_id = mv['product_id'][0]
+                        product_uom_qty = product_qty-qty_done
+                        product_uom = mv['product_uom'][0]
+                        location_id = mv['location_id'][0]
+                        location_dest_id = mv['location_dest_id'][0]
+                        picking_id = picking_new_id
+                        picking_type_id = mv['picking_type_id'][0]
+                        to_refund = mv['to_refund']
+                        reservation_date = mv['reservation_date']
+                        next_serial_count = mv['next_serial_count']
+                        is_inventory = mv['is_inventory']
+                        description_picking = mv['description_picking']
+                        date_deadline = mv['date_deadline']
+                        vals = {
+                                'name':name,
+                                'product_id':product_id,
+                                'product_uom_qty': product_uom_qty,
+                                'product_uom': product_uom,
+                                'location_id': location_id,
+                                'location_dest_id': location_dest_id,
+                                'picking_id': picking_id,
+                                'state' : 'assigned',
+                                'picking_type_id': picking_type_id,
+                                "transfer_id": TransferId,
+                                'to_refund':to_refund,
+                                'reservation_date':reservation_date,
+                                'next_serial_count': next_serial_count,
+                                'is_inventory': is_inventory,
+                                'description_picking': description_picking
+                        }
+                        move_id_new = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
+                        print(move_id_new)
+                        
+                else:
+                    move_old = models.execute_kw(db, uid, password, 'stock.move', 'read', [moveids], {'fields': ['product_qty','name','product_id','product_qty','product_uom_qty','product_uom','location_id','location_dest_id','partner_id','picking_id','price_unit','state','origin','group_id','picking_type_id','warehouse_id','to_refund','reservation_date','next_serial_count','is_inventory','description_picking','date_deadline','transfer_id']})
+                    for mv in move_old:
+                        name = mv['name']
+                        product_id = mv['product_id'][0]
+                        product_uom_qty = product_qty-qty_done
+                        product_uom = mv['product_uom'][0]
+                        location_id = mv['location_id'][0]
+                        location_dest_id = mv['location_dest_id'][0]
+                        picking_id = picking_new_id
+                        picking_type_id = mv['picking_type_id'][0]
+                        to_refund = mv['to_refund']
+                        reservation_date = mv['reservation_date']
+                        next_serial_count = mv['next_serial_count']
+                        is_inventory = mv['is_inventory']
+                        description_picking = mv['description_picking']
+                        date_deadline = mv['date_deadline']
+                        vals = {
+                                'name':name,
+                                'product_id':product_id,
+                                'product_uom_qty': product_uom_qty,
+                                'product_uom': product_uom,
+                                'location_id': location_id,
+                                'location_dest_id': location_dest_id,
+                                'picking_id': picking_id,
+                                'state' : 'assigned',
+                                'picking_type_id': picking_type_id,
+                                "transfer_id": TransferId,
+                                'to_refund':to_refund,
+                                'reservation_date':reservation_date,
+                                'next_serial_count': next_serial_count,
+                                'is_inventory': is_inventory,
+                                'description_picking': description_picking
+                        }
+                        move_id_new = models.execute_kw(db, uid, password, 'stock.move', 'create', [vals])
+                        print(move_id_new)
+                        
+
+    
+        models.execute_kw(db, uid, password, 'stock.picking', 'write', [[picking_ids], {'state': "done",'date_done': now}])
+        if state in ('approved','partially_transfered'):
+            if picking_new_id:
+                models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "partially_transfered"}]) 
+            else:
+                models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "transfered"}]) 
+                
+        elif state in ('transfered','partially_received'):
+            if picking_new_id:
+                models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "partially_received"}]) 
+            else:
+                models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'write', [[TransferId], {'state': "received"}]) 
+
+        return True
+    
     def validate_internal_transfer_out(self, request, serializer=False):
         url = serializer.data['url']
         db = serializer.data['db']
