@@ -135,7 +135,7 @@ class BaseResponse(object):
                         description = cek_state_transfer[0]['description']
                     id =x['id']
                     type_id = x['picking_type_id'][0]
-                    cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','INT']]], {'fields': ['name']})
+                    cek_inter = models.execute_kw(db, uid, password, 'stock.picking.type', 'search_read', [[['id','=',type_id],['sequence_code','=','PICK']]], {'fields': ['name']})
                     if cek_inter and x['state']=='assigned':
                         stock_move  = models.execute_kw(db, uid, password, 'stock.move', 'search_read', [[['picking_id','=',id]]], {'fields': ['product_id','product_qty','id','product_uom']})
                         linesIT=[]
