@@ -119,13 +119,14 @@ class BaseResponse(object):
         common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(url))
         uid = common.authenticate(db, username, password, {})
         models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-        # print(response)
         for x in response:
             if x['transfer_id']:
                 all_qty = 0
                 transfer_id = x['transfer_id'][0]
-                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': ['state','material_req','description']})
-                if cek_state_transfer[0]['state'] in ('transfered','partially_received','approved','partially_transfered'):
+                cek_state_transfer = models.execute_kw(db, uid, password, 'amtiss.part.transfer', 'search_read', [[['id','=',transfer_id]]], {'fields': []})
+                
+                #Transfer
+                if cek_state_transfer[0]['state'] in ('approved','partially_transfered'):
                     material_req = ''
                     if cek_state_transfer[0]['material_req']!=False:
                         material_req = cek_state_transfer[0]['material_req'][1]
@@ -187,7 +188,48 @@ class BaseResponse(object):
                             'allQtyRequest':all_qty,
                             'allQtyReceive':0,
                         })
-        return internal
+                
+                #Received
+                if cek_state_transfer[0]['state'] in ('transfered','partially_received'):
+                    transfer_id = cek_state_transfer[0]['id']
+                    transfer_number = cek_state_transfer[0]['name']
+                    source_location = cek_state_transfer[0]['source_location'][1]
+                    destination_location = cek_state_transfer[0]['location_dest'][1]
+                    state = cek_state_transfer[0]['state']
+                    material_req = cek_state_transfer[0]['material_req'] if cek_state_transfer[0]['material_req'] else ''
+                    description = cek_state_transfer[0]['description'] if cek_state_transfer[0]['description'] else ''
+                    part_transfer_line = cek_state_transfer[0]['amtiss_part_transfer_line']
+                    linesIT=[]
+                    for line in part_transfer_line:
+                        line  = models.execute_kw(db, uid, password, 'amtiss.part.transfer.line', 'search_read', [[['id','=',line]]], {'fields': []})
+                        barcode_obj  = models.execute_kw(db, uid, password, 'product.product', 'search_read', [[['id','=',line[0]['product_id'][0]]]], {'fields': ['barcode']})
+                        barcode = barcode_obj[0]['barcode'] if barcode_obj[0]['barcode'] else ''
+                        linesIT.append(
+                                {
+                                    "productId": line[0]['product_id'][0],
+                                    "productBarcode": barcode,
+                                    "productName": line[0]['product_id'][1],
+                                    "productUom": line[0]['uom_id'][1],
+                                    "productQtyReceived": line[0]['qty_done'],
+                                    "productQtyDemand": line[0]['qty'],
+                                    "productQtyDone": line[0]['qty_done'],
+                                })
+                        all_qty +=  line[0]['qty_temp']
+                    internal.append({
+                            'TransferId': transfer_id,
+                            'TransferNumber': transfer_number,
+                            'SourceLocation': source_location,
+                            'DestinationLocation':destination_location,
+                            'state':state,
+                            'MRID': material_req,
+                            'Description': description,
+                            'InternalTransferLine': linesIT,
+                            'allQtyRequest':all_qty,
+                            'allQtyReceive':0,
+                        })
+                    
+            print(internal)      
+            return internal
 
     def internal_transfer_in(self, response,serializer=False):
         url = serializer.data['url']
